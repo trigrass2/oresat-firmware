@@ -34,7 +34,7 @@
  * Board identifier.
  */
 #define BOARD_ST_NUCLEO64_F446RE
-#define BOARD_NAME                  "STMicroelectronics STM32 Nucleo64-F446RE"
+#define BOARD_NAME                  "ACS_DEV_F446RE"
 
 /*
  * Board oscillators-related settings.

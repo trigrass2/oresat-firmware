@@ -40,10 +40,22 @@ static SerialConfig ser_cfg ={
 };
 
 /**
+ *	pinConfig: for pin configuration
+ *  /// TODO: fix the board file so
+ *	/// this can go away
+ */
+static void pinConfig(void){
+//	palSetPadMode(GPIOA,GPIOA_LED_GREEN,PAL_MODE_OUTPUT_PUSHPULL);
+};
+
+/**
  *	App initialization function
  */
 static void app_init(void){
+	pinConfig();
 	acs_init(&acs);
+	canRPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,CAN_BUF_SIZE,acs.can_buf.cmd);
+	canTPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,0,0,CAN_BUF_SIZE,acs.can_buf.status);
 	sdStart(&SD2, &ser_cfg);	/// Start serial support
 }
 
@@ -56,7 +68,7 @@ static void app_main(void){
 		sizeof(waACS_Thread),
 		NORMALPRIO,
 		ACS_Thread,
-		NULL
+		&acs	
 	);
 
 	while(true){ /// main loop
@@ -73,7 +85,7 @@ int main(void){
 	 */
 	halInit();
 	chSysInit();
-	oresat_init(0);
+	oresat_init(CAN_NODE_ID);
 
 	/**
 	 * App init and main

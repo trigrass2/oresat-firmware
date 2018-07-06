@@ -86,7 +86,8 @@ endif
 PROJECT   = app_oresat_acs
 
 # Define board here
-BOARD     = ST_NUCLEO64_F446RE
+BOARD     = ACS_DEV_F446RE
+#BOARD     = ST_NUCLEO64_F446RE
 
 #Project sources
 PROJ_ROOT = ../../..
