@@ -23,10 +23,15 @@
  *	Function return status
  */
 typedef enum{
-	STATUS_SUCCESS=0,
-	STATUS_FAILURE
+	STATUS_SUCCESS=0u,
+	STATUS_FAILURE,
+	STATUS_INVALID_CMD
 }EXIT_STATUS;
 
+
+/**
+ *	Valid ACS states
+ */
 typedef enum{
 	ST_RDY,		// low power
 	ST_RW,
@@ -34,40 +39,25 @@ typedef enum{
 	ST_MAX_PWR
 }ACS_VALID_STATE;
 
-#define MAX_STATES (int)(sizeof(ACS_VALID_STATE))
+#define NUM_VALID_STATES (int)(sizeof(ACS_VALID_STATE))
 
+/**
+ *	Valid Functions
+ */
 typedef enum{
-	FN_RW_SETDC,
+	FN_RW_SETDC=0u,
 	FN_MTQR_SETDC//,
 }ACS_VALID_FUNCTION;
 
-typedef struct ACS ACS;
+#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_STATE))
 
-struct ACS{
-	acs_state cur_state;
-	acs_function function;
-	int (*fn_exit)(ACS *acs);
-};
+typedef enum{
+	NOP=0u,
+	CHANGE_STATE,
+	CALL_FUNCTION
+}ACS_VALID_COMMAND;
 
-typedef struct{
-	acs_state cur_state;
-	acs_state req_state;
-	int (*fn_entry)(ACS *acs);
-	int (*fn_exit)(ACS *acs);
-}acs_transition_rule;
-
-typedef struct{
-	acs_state state;
-	acs_function function;
-	int (*fn)(ACS *acs);
-}acs_function_rule;
-
-/**
- *	State information struct
- */
-typedef struct{
-	uint8_t last,current,next;
-}ACS_STATE;
+#define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
 
 /**
  *	CAN buffer structure for command
@@ -77,6 +67,48 @@ typedef struct{
 	uint8_t cmd[CAN_BUF_SIZE];
 	uint8_t status[CAN_BUF_SIZE];
 }CAN_BUFFER;
+
+/**
+ *	State information struct
+ */
+typedef struct{
+	uint8_t last,current,next;
+}ACS_STATE;
+
+/**
+ *	ACS: State and control information struct
+ *  
+ *  ACS predefinition to make the compiler happy
+ *  when self referencing.
+ */
+typedef struct ACS ACS;
+
+struct ACS{
+	ACS_STATE state;
+	CAN_BUFFER can_buf;
+	uint8_t cmd[CAN_BUF_SIZE];
+	ACS_VALID_FUNCTION function;
+	ACS_VALID_STATE (*fn_exit)(ACS *acs);
+};
+
+/**
+ *
+ */
+typedef struct{
+	ACS_VALID_STATE cur_state;
+	ACS_VALID_STATE req_state;
+	ACS_VALID_STATE (*fn_entry)(ACS *acs);
+	ACS_VALID_STATE (*fn_exit)(ACS *acs);
+}acs_transition_rule;
+
+/**
+ *
+ */
+typedef struct{
+	ACS_VALID_STATE state;
+	ACS_VALID_FUNCTION function;
+	EXIT_STATUS (*fn)(ACS *acs);
+}acs_function_rule;
 
 /**
  * Buffer for receiving commands off the CAN bus
@@ -107,14 +139,6 @@ typedef enum{
 	CAN_STATE_7
 }CAN_STATUS_BUF;
 
-/**
- *	ACS: State and control information struct
- */
-typedef struct{
-	ACS_STATE state;
-	CAN_BUFFER can_buf;
-}ACS;
-
 extern THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 extern THD_FUNCTION(ACS_Thread, arg);
 
@@ -123,6 +147,6 @@ extern EXIT_STATUS acs_init(ACS *acs);
 extern acs_transition_rule trans[];
 extern acs_function_rule func[];
 
-extern int acs_statemachine(ACS *acs);
+extern EXIT_STATUS acs_statemachine(ACS *acs);
 
 #endif
