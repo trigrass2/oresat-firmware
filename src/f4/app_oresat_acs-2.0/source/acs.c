@@ -1,14 +1,23 @@
 #include "acs.h"
 
+/**
+ *	event_lister is used for synchronization between 
+ *	the ACS and the CAN thread
+ */
 event_listener_t el;
 
+/**
+ *	ACS initialization function
+ */
 extern EXIT_STATUS acs_init(ACS *acs){
 	(void)acs;
 	// need to initialize things
 	return STATUS_SUCCESS;
 }	
 
-// ST_RDY state transistion functions
+/**
+ *	ST_RDY state transistion functions
+ */
 static ACS_VALID_STATE entry_rdy(ACS *acs){
 	(void)acs;
 	return ST_RDY;
@@ -19,7 +28,9 @@ static ACS_VALID_STATE exit_rdy(ACS *acs){
 	return ST_RDY;
 }
 
-// ST_RW state transistion functions
+/**
+ *	ST_RW state transistion functions
+ */
 static ACS_VALID_STATE entry_rw(ACS *acs){
 	(void)acs;
 	return ST_RW;
@@ -30,7 +41,9 @@ static ACS_VALID_STATE exit_rw(ACS *acs){
 	return ST_RW;
 }
 
-// ST_MTQR state transistion functions
+/**
+ *	ST_MTQR state transistion functions
+ */
 static ACS_VALID_STATE entry_mtqr(ACS *acs){
 	(void)acs;
 	return ST_MTQR;
@@ -41,7 +54,12 @@ static ACS_VALID_STATE exit_mtqr(ACS *acs){
 	return ST_MTQR;
 }
 
-// ST_MAX_POWER state transistion functions
+/**
+ *	ST_MAX_POWER state transistion functions
+ *
+ *	TODO: change the name of this to more acurately
+ *	reflect it's intent
+ */
 static ACS_VALID_STATE entry_max_pwr(ACS *acs){
 	(void)acs;
 	return ST_MAX_PWR;
@@ -52,17 +70,37 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs){
 	return ST_MAX_PWR;
 }
 
-// functions
+/**
+ *	Function definitions
+ *
+ *	These functions are validified using the 
+ *	acs_function_rule struct. Functions are 
+ *	represented in the struct by pointers
+ *	which are associated with a valid state
+ *	and valid function name to create a rule 
+ *	that allows functions to only be called 
+ *	from an allowed state.
+ */
+
+/**
+ *	Set reaction wheel duty cycle
+ */
 static EXIT_STATUS fn_rw_setdc(ACS *acs){
 	(void)acs;
 	return STATUS_SUCCESS;
 }
 
+/**
+ *	Set magnetorquer duty cycle
+ */
 static EXIT_STATUS fn_mtqr_setdc(ACS *acs){
 	(void)acs;
 	return STATUS_SUCCESS;
 }
 
+/**
+ *	Set magnetorquer duty cycle
+ */
 acs_function_rule func[] = {
 	{ST_RW, 			FN_RW_SETDC,		&fn_rw_setdc},
 	{ST_MTQR, 		FN_MTQR_SETDC,	&fn_mtqr_setdc},
@@ -72,6 +110,9 @@ acs_function_rule func[] = {
 
 #define FUNC_COUNT (int)(sizeof(func)/sizeof(acs_function_rule))
 
+/**
+ *
+ */
 static EXIT_STATUS callFunction(ACS *acs){
 	int i;
 	ACS_VALID_FUNCTION function;
@@ -92,6 +133,10 @@ static EXIT_STATUS callFunction(ACS *acs){
 	return acs->state.current;
 }
 
+/**
+ *	acs_transition_rule: defines valid state transitions
+ *	and associates them with an entry and exit function
+ */
 acs_transition_rule trans[] = {
 	{ST_RDY,			ST_RW,				&entry_rw,				&exit_rdy},
 	{ST_RDY,			ST_MTQR,			&entry_mtqr,			&exit_rdy},
@@ -107,6 +152,9 @@ acs_transition_rule trans[] = {
 
 #define TRANS_COUNT (int)(sizeof(trans)/sizeof(acs_transition_rule))
 
+/**
+ *
+ */
 ACS_VALID_FUNCTION requestFunction(ACS *acs){
 	int function =0;
 //	char input[3]="";
@@ -127,6 +175,9 @@ ACS_VALID_FUNCTION requestFunction(ACS *acs){
 	return STATUS_SUCCESS;
 }
 
+/**
+ *
+ */
 ACS_VALID_STATE requestTransition(ACS *acs){
 	int i,state = 0;
 
@@ -149,14 +200,14 @@ ACS_VALID_STATE requestTransition(ACS *acs){
  *	handles events off the CAN bus
  */
 EXIT_STATUS handleEvent(ACS *acs){
-	uint8_t cmd = 0u;
+//	uint8_t cmd = 0u;
 
 	chEvtWaitAny(ALL_EVENTS);	
 // ******critical section*******
 	chSysLock();
 	for(int i=0;i<CAN_BUF_SIZE;++i){
 		acs->cmd[i]=acs->can_buf.cmd[i];
-		acs->can_buf.cmd[i]=0;
+		acs->can_buf.cmd[i]=0x00;
 	}
 	chSysUnlock();
 // ******end critical section*******
@@ -181,14 +232,18 @@ EXIT_STATUS handleEvent(ACS *acs){
 extern EXIT_STATUS acs_statemachine(ACS *acs){
 	acs->state.current = entry_rdy(acs);
 	acs->fn_exit = exit_rdy;
-	
+
 	while(!chThdShouldTerminateX()){
 		handleEvent(acs);
+    chThdSleepMilliseconds(100);
 	}
 	
 	return STATUS_SUCCESS;
 } 
 
+/**
+ *
+ */
 THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 THD_FUNCTION(ACS_Thread,acs){
 //	((ACS *)acs)->state.current=1;

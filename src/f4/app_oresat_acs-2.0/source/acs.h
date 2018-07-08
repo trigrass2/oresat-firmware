@@ -28,9 +28,13 @@ typedef enum{
 	STATUS_INVALID_CMD
 }EXIT_STATUS;
 
-
 /**
  *	Valid ACS states
+ *
+ *	TODO: states are going to be very different based on
+ *	which MCU we use. Determine a base set of states for
+ *	the F4 and then add appropriate low power states when
+ *	the L4 becomes available
  */
 typedef enum{
 	ST_RDY,		// low power
@@ -49,8 +53,12 @@ typedef enum{
 	FN_MTQR_SETDC//,
 }ACS_VALID_FUNCTION;
 
-#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_STATE))
+#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
 
+
+/**
+ *	
+ */
 typedef enum{
 	NOP=0u,
 	CHANGE_STATE,
@@ -92,7 +100,8 @@ struct ACS{
 };
 
 /**
- *
+ *	acs_transition_rule: defines the structure of a valid
+ *	transition.
  */
 typedef struct{
 	ACS_VALID_STATE cur_state;
