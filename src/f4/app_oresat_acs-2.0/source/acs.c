@@ -200,8 +200,6 @@ ACS_VALID_STATE requestTransition(ACS *acs){
  *	handles events off the CAN bus
  */
 EXIT_STATUS handleEvent(ACS *acs){
-//	uint8_t cmd = 0u;
-
 	chEvtWaitAny(ALL_EVENTS);	
 // ******critical section*******
 	chSysLock();
@@ -217,7 +215,9 @@ EXIT_STATUS handleEvent(ACS *acs){
 			requestTransition(acs);
 			break;
 		case CALL_FUNCTION:
+			/* not ready yet
 			requestFunction(acs);
+			//*/
 			break;
 		default:
 			return STATUS_INVALID_CMD;
@@ -234,15 +234,26 @@ extern EXIT_STATUS acs_statemachine(ACS *acs){
 	acs->fn_exit = exit_rdy;
 
 	while(!chThdShouldTerminateX()){
+	/*	// commented so the event handler doesn't run while
+	  	// debugging CAN
+	  	// TODO: figure out CAN
 		handleEvent(acs);
     chThdSleepMilliseconds(100);
+	//*/
+	//* // this is for a sanity check
+    palClearLine(LINE_LED_GREEN);
+    chThdSleepMilliseconds(500);
+    palSetLine(LINE_LED_GREEN);
+    chThdSleepMilliseconds(500);
+	//*/
 	}
 	
 	return STATUS_SUCCESS;
 } 
 
 /**
- *
+ *	ACS thread working area and thread
+ *	function.
  */
 THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 THD_FUNCTION(ACS_Thread,acs){
@@ -251,12 +262,4 @@ THD_FUNCTION(ACS_Thread,acs){
   chRegSetThreadName("acs_thread");
 
 	acs_statemachine(acs);
-/*
-  while (!chThdShouldTerminateX()){
-    palClearLine(LINE_LED_GREEN);
-    chThdSleepMilliseconds(500);
-    palSetLine(LINE_LED_GREEN);
-    chThdSleepMilliseconds(500);
-  }
-//*/
 }

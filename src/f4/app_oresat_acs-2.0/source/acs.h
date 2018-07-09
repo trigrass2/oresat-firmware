@@ -4,6 +4,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "stdint.h"
+#include "oresat.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
 
@@ -14,7 +15,7 @@
 #define CAN_NODE_ID			0x3F	/// max 0x7F
 
 /**
- * Serial debugging
+ *	Serial debugging
  */
 #define DEBUG_SERIAL SD2
 #define DEBUG_CHP ((BaseSequentialStream *) &DEBUG_SERIAL)
@@ -55,9 +56,9 @@ typedef enum{
 
 #define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
 
-
 /**
- *	
+ *	ACS_VALID_COMMAND: Exhaustive list of valid commands
+ *	received off the CAN bus
  */
 typedef enum{
 	NOP=0u,
@@ -111,7 +112,8 @@ typedef struct{
 }acs_transition_rule;
 
 /**
- *
+ *	acs_function_rule: rule structure for the valid rule
+ *	table
  */
 typedef struct{
 	ACS_VALID_STATE state;
@@ -138,14 +140,14 @@ typedef enum{
  * state and ACS status information
  */
 typedef enum{
-	CAN_STATE_0=0,
-	CAN_STATE_1,
-	CAN_STATE_2,
-	CAN_STATE_3,
-	CAN_STATE_4,
-	CAN_STATE_5,
-	CAN_STATE_6,
-	CAN_STATE_7
+	CAN_STATUS_0=0,
+	CAN_STATUS_1,
+	CAN_STATUS_2,
+	CAN_STATUS_3,
+	CAN_STATUS_4,
+	CAN_STATUS_5,
+	CAN_STATUS_6,
+	CAN_STATUS_7
 }CAN_STATUS_BUF;
 
 extern THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);

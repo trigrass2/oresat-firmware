@@ -24,10 +24,9 @@
 /** 
  *	Project header files
  */
-#include "oresat.h"
 #include "acs.h"
 
-ACS acs = { 0 }; /// Global ACS struct
+ACS acs = {  }; /// Global ACS struct
 
 /**
  *	Structure for serial configuration
@@ -53,9 +52,15 @@ static void pinConfig(void){
  */
 static void app_init(void){
 	pinConfig();
-	acs_init(&acs);
+/*
+	uint8_t cmd[CAN_BUF_SIZE] = {0};
+	uint8_t status[CAN_BUF_SIZE] = {0};
+	canRPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,CAN_BUF_SIZE,cmd);
+	canTPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,0,0,CAN_BUF_SIZE,status);
+//*/
 	canRPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,CAN_BUF_SIZE,acs.can_buf.cmd);
 	canTPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,0,0,CAN_BUF_SIZE,acs.can_buf.status);
+	acs_init(&acs);
 	sdStart(&SD2, &ser_cfg);	/// Start serial support
 }
 
@@ -66,7 +71,7 @@ static void app_main(void){
 	chThdCreateStatic( /// Create ACS thread
 		waACS_Thread,
 		sizeof(waACS_Thread),
-		NORMALPRIO,
+		NORMALPRIO+1,
 		ACS_Thread,
 		&acs	
 	);
