@@ -176,9 +176,9 @@ ACS_VALID_FUNCTION requestFunction(ACS *acs){
 }
 
 /**
- *
+ *	transitionState
  */
-ACS_VALID_STATE requestTransition(ACS *acs){
+EXIT_STATUS transitionState(ACS *acs){
 	int i,state = 0;
 
 	if((int)state < 0 || state >= NUM_VALID_STATES){
@@ -189,11 +189,12 @@ ACS_VALID_STATE requestTransition(ACS *acs){
 			acs->fn_exit(acs);
 			acs->fn_exit=trans[i].fn_exit;
 			acs->state.current = (trans[i].fn_entry)(acs);
-			break;
+	//		break;
+			return STATUS_SUCCESS;
 		}
 	}
 
-	return STATUS_SUCCESS;
+	return STATUS_FAILURE;
 }
 
 /**
@@ -201,18 +202,20 @@ ACS_VALID_STATE requestTransition(ACS *acs){
  */
 EXIT_STATUS handleEvent(ACS *acs){
 	chEvtWaitAny(ALL_EVENTS);	
-// ******critical section*******
+/// ******critical section*******
 	chSysLock();
 	for(int i=0;i<CAN_BUF_SIZE;++i){
 		acs->cmd[i]=acs->can_buf.cmd[i];
 		acs->can_buf.cmd[i]=0x00;
 	}
 	chSysUnlock();
-// ******end critical section*******
+/// ******end critical section*******
 	
 	switch(acs->cmd[CAN_CMD_0]){
 		case CHANGE_STATE:
-			requestTransition(acs);
+			// TODO: write a general function wrapper for 
+			// writing status codes to the register.
+			transitionState(acs);
 			break;
 		case CALL_FUNCTION:
 			/* not ready yet
