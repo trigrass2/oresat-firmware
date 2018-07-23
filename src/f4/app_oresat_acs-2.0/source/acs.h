@@ -5,6 +5,7 @@
 #include "hal.h"
 #include "stdint.h"
 #include "oresat.h"
+#include "bldc.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
 
@@ -123,6 +124,8 @@ typedef struct{
 
 /**
  * Buffer for receiving commands off the CAN bus
+ * TODO: These fields need to be defined and
+ * adherred to 
  */
 typedef enum{
 	CAN_CMD_0=0,
@@ -138,6 +141,8 @@ typedef enum{
 /**
  * Buffer for maintaining and reporting both
  * state and ACS status information
+ * TODO: These fields need to be defined and
+ * adherred to 
  */
 typedef enum{
 	CAN_STATUS_0=0,
