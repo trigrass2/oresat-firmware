@@ -100,7 +100,7 @@ typedef struct{
   uint8_t sin_diff;
 	uint16_t position;				// motor position from encoder
   bool openLoop;
-					 sinctrl_t const *sinctrl; // pointer to the sin lut
+	sinctrl_t const *sinctrl; // pointer to the sin lut
 	uint16_t spi_rxbuf[2]; // receive buffer
 	thread_t *p_spi_thread;
   adcsample_t samples[ADC_GRP_NUM_CHANNELS * ADC_GRP_BUF_DEPTH]; // ADC conversion storage array

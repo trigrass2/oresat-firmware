@@ -129,7 +129,7 @@ typedef struct{
  */
 typedef enum{
 	CAN_CMD_0=0,
-	CAN_CMD_1,
+	CAN_CMD_ARG,	//CAN_CMD_1,
 	CAN_CMD_2,
 	CAN_CMD_3,
 	CAN_CMD_4,
@@ -145,11 +145,11 @@ typedef enum{
  * adherred to 
  */
 typedef enum{
-	CAN_STATUS_0=0,
-	CAN_STATUS_1,
-	CAN_STATUS_2,
-	CAN_STATUS_3,
-	CAN_STATUS_4,
+	CAN_SM_STATE = 0,		//
+	CAN_SM_PREV_STATE,	//
+	CAN_SM_STATUS,			//
+	CAN_FN_CALLED,			//
+	CAN_FN_STATUS,			//
 	CAN_STATUS_5,
 	CAN_STATUS_6,
 	CAN_STATUS_7

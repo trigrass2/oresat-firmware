@@ -7,7 +7,7 @@
 event_listener_t el;
 
 /**
- *	ACS initialization function
+ *	@brief ACS initialization function
  */
 extern EXIT_STATUS acs_init(ACS *acs){
 	(void)acs;
@@ -16,15 +16,42 @@ extern EXIT_STATUS acs_init(ACS *acs){
 }	
 
 /**
+ *	@brief updates current CAN_SM_STATE to the value of next_state
+ */
+inline static EXIT_STATUS entry_helper(ACS *acs, ACS_VALID_STATE next_state){
+/// ******critical section*******
+	chSysLock();
+	acs->can_buf.status[CAN_SM_STATE] = next_state;
+	chSysUnlock();
+/// ******end critical section*******
+	return STATUS_SUCCESS;
+}
+
+/**
+ *	@brief updates CAN_SM_PREV_STATE buffer to the value of CAN_SM_STATE
+ *	@brief buffer. this relects the change of the current state to previous
+ */
+inline static EXIT_STATUS exit_helper(ACS *acs){
+/// ******critical section*******
+	chSysLock();
+	acs->can_buf.status[CAN_SM_PREV_STATE] = acs->can_buf.status[CAN_SM_STATE];
+	chSysUnlock();
+/// ******end critical section*******
+	return STATUS_SUCCESS;
+}
+
+/**
  *	ST_RDY state transistion functions
  */
 static ACS_VALID_STATE entry_rdy(ACS *acs){
 	(void)acs;
+	entry_helper(acs,ST_RDY);
 	return ST_RDY;
 }
 
 static ACS_VALID_STATE exit_rdy(ACS *acs){
 	(void)acs;
+	exit_helper(acs);
 	return ST_RDY;
 }
 
@@ -33,11 +60,13 @@ static ACS_VALID_STATE exit_rdy(ACS *acs){
  */
 static ACS_VALID_STATE entry_rw(ACS *acs){
 	(void)acs;
+	entry_helper(acs,ST_RW);
 	return ST_RW;
 }
 
 static ACS_VALID_STATE exit_rw(ACS *acs){
 	(void)acs;
+	exit_helper(acs);
 	return ST_RW;
 }
 
@@ -46,11 +75,13 @@ static ACS_VALID_STATE exit_rw(ACS *acs){
  */
 static ACS_VALID_STATE entry_mtqr(ACS *acs){
 	(void)acs;
+	entry_helper(acs,ST_MTQR);
 	return ST_MTQR;
 }
 
 static ACS_VALID_STATE exit_mtqr(ACS *acs){
 	(void)acs;
+	exit_helper(acs);
 	return ST_MTQR;
 }
 
@@ -62,11 +93,13 @@ static ACS_VALID_STATE exit_mtqr(ACS *acs){
  */
 static ACS_VALID_STATE entry_max_pwr(ACS *acs){
 	(void)acs;
+	entry_helper(acs,ST_MAX_PWR);
 	return ST_MAX_PWR;
 }
 
 static ACS_VALID_STATE exit_max_pwr(ACS *acs){
 	(void)acs;
+	exit_helper(acs);
 	return ST_MAX_PWR;
 }
 
@@ -237,13 +270,13 @@ extern EXIT_STATUS acs_statemachine(ACS *acs){
 	acs->fn_exit = exit_rdy;
 
 	while(!chThdShouldTerminateX()){
-	/*	// commented so the event handler doesn't run while
+	//*	// commented so the event handler doesn't run while
 	  	// debugging CAN
 	  	// TODO: figure out CAN
 		handleEvent(acs);
     chThdSleepMilliseconds(100);
 	//*/
-	//* // this is for a sanity check
+	/* // this is for a sanity check
     palClearLine(LINE_LED_GREEN);
     chThdSleepMilliseconds(500);
     palSetLine(LINE_LED_GREEN);

@@ -62,6 +62,7 @@ static void app_init(void){
  * App main function
  */
 static void app_main(void){
+//*
 	chThdCreateStatic( /// Create ACS thread
 		waACS_Thread,
 		sizeof(waACS_Thread),
@@ -69,7 +70,7 @@ static void app_main(void){
 		ACS_Thread,
 		&acs	
 	);
-
+//*/
 	while(true){ /// main loop
 		chThdSleepMilliseconds(1000);
 	}
