@@ -265,7 +265,7 @@ extern void bldcSetDC(uint8_t channel,uint16_t dc){
 }
 
 /**
- * @ brief Tear down drivers in a sane way.
+ * @brief Tear down drivers in a sane way.
  *
  */
 extern void bldcExit(bldc *pbldc){
