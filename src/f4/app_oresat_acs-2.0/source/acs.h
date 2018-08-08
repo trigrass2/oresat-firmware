@@ -5,7 +5,7 @@
 #include "hal.h"
 #include "stdint.h"
 #include "oresat.h"
-#include "bldc.h"
+//#include "bldc.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
 
@@ -27,7 +27,9 @@
 typedef enum{
 	STATUS_SUCCESS=0u,
 	STATUS_FAILURE,
-	STATUS_INVALID_CMD
+	STATUS_INVALID_CMD,
+	STATUS_INVALID_STATE,
+	STATUS_INVALID_TRANSITION
 }EXIT_STATUS;
 
 /**
@@ -39,6 +41,7 @@ typedef enum{
  *	the L4 becomes available
  */
 typedef enum{
+	ST_NOP=0u,
 	ST_RDY,		// low power
 	ST_RW,
 	ST_MTQR,

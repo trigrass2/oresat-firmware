@@ -148,13 +148,13 @@ acs_function_rule func[] = {
  */
 static EXIT_STATUS callFunction(ACS *acs){
 	int i;
-	ACS_VALID_FUNCTION function;
+	EXIT_STATUS exit_status;
 
 	for(i = 0;i < FUNC_COUNT;++i){
 		if(acs->state.current == func[i].state){
-			if((acs->function == func[i].function)){
-				function = (func[i].fn)(acs);
-				if(function){
+			if(acs->function == func[i].function){
+				exit_status = (func[i].fn)(acs);
+				if(exit_status != STATUS_SUCCESS){
 //					printf("function call error!\n");
 //					TODO: Make this make sense in firmware land
 				}
@@ -188,7 +188,7 @@ acs_transition_rule trans[] = {
 /**
  *
  */
-ACS_VALID_FUNCTION requestFunction(ACS *acs){
+EXIT_STATUS requestFunction(ACS *acs){
 	int function =0;
 //	char input[3]="";
 
@@ -212,43 +212,44 @@ ACS_VALID_FUNCTION requestFunction(ACS *acs){
  *	transitionState
  */
 EXIT_STATUS transitionState(ACS *acs){
-	int i,state = 0;
-
-	if((int)state < 0 || state >= NUM_VALID_STATES){
-		return STATUS_FAILURE; 
+	ACS_VALID_STATE state = acs->cmd[CAN_CMD_ARG];
+	if(state <= ST_NOP || state >= NUM_VALID_STATES){
+		return STATUS_INVALID_STATE; 
 	}
-	for (i = 0;i < TRANS_COUNT;++i){
+	for (int i = 0;i < TRANS_COUNT;++i){
 		if((acs->state.current==trans[i].cur_state)&&(state==trans[i].req_state)){
 			acs->fn_exit(acs);
 			acs->fn_exit=trans[i].fn_exit;
 			acs->state.current = (trans[i].fn_entry)(acs);
-	//		break;
 			return STATUS_SUCCESS;
 		}
 	}
-
-	return STATUS_FAILURE;
+	return STATUS_INVALID_TRANSITION;
 }
 
 /**
  *	handles events off the CAN bus
  */
 EXIT_STATUS handleEvent(ACS *acs){
+	EXIT_STATUS status = STATUS_SUCCESS;
 	chEvtWaitAny(ALL_EVENTS);	
 /// ******critical section*******
 	chSysLock();
-	for(int i=0;i<CAN_BUF_SIZE;++i){
-		acs->cmd[i]=acs->can_buf.cmd[i];
-		acs->can_buf.cmd[i]=0x00;
+	for(int i = 0;i < CAN_BUF_SIZE; ++i){
+		acs->cmd[i] = acs->can_buf.cmd[i];
+		acs->can_buf.cmd[i] = 0x00;
 	}
 	chSysUnlock();
 /// ******end critical section*******
 	
 	switch(acs->cmd[CAN_CMD_0]){
 		case CHANGE_STATE:
-			// TODO: write a general function wrapper for 
-			// writing status codes to the register.
-			transitionState(acs);
+			status = transitionState(acs);
+		/// ******critical section*******
+			chSysLock();
+			acs->can_buf.status[CAN_SM_STATUS] = status;
+			chSysUnlock();
+		/// ******end critical section*******
 			break;
 		case CALL_FUNCTION:
 			/* not ready yet
@@ -266,16 +267,16 @@ EXIT_STATUS handleEvent(ACS *acs){
  *	ACS statemachine entry
  */
 extern EXIT_STATUS acs_statemachine(ACS *acs){
+/*
 	acs->state.current = entry_rdy(acs);
 	acs->fn_exit = exit_rdy;
+//*/
+	acs->state.current = entry_rw(acs);
+	acs->fn_exit = exit_rw;
 
 	while(!chThdShouldTerminateX()){
-	//*	// commented so the event handler doesn't run while
-	  	// debugging CAN
-	  	// TODO: figure out CAN
 		handleEvent(acs);
     chThdSleepMilliseconds(100);
-	//*/
 	/* // this is for a sanity check
     palClearLine(LINE_LED_GREEN);
     chThdSleepMilliseconds(500);
