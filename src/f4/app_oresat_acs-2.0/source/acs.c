@@ -1,4 +1,5 @@
 #include "acs.h"
+#include "chprintf.h"
 
 /**
  *	event_lister is used for synchronization between 
@@ -156,6 +157,7 @@ static EXIT_STATUS callFunction(ACS *acs){
 				exit_status = (func[i].fn)(acs);
 				if(exit_status != STATUS_SUCCESS){
 //					printf("function call error!\n");
+            chprintf(DEBUG_CHP,"Function call error: %u \n\r", exit_status);
 //					TODO: Make this make sense in firmware land
 				}
 				break;
@@ -214,10 +216,12 @@ EXIT_STATUS requestFunction(ACS *acs){
 EXIT_STATUS transitionState(ACS *acs){
 	ACS_VALID_STATE state = acs->cmd[CAN_CMD_ARG];
 	if(state <= ST_NOP || state >= NUM_VALID_STATES){
+  chprintf(DEBUG_CHP,"ERROR: %u \n\r", state);
 		return STATUS_INVALID_STATE; 
 	}
 	for (int i = 0;i < TRANS_COUNT;++i){
 		if((acs->state.current==trans[i].cur_state)&&(state==trans[i].req_state)){
+      chprintf(DEBUG_CHP,"Changing to state: %u \n\r", state);
 			acs->fn_exit(acs);
 			acs->fn_exit=trans[i].fn_exit;
 			acs->state.current = (trans[i].fn_entry)(acs);
@@ -231,8 +235,10 @@ EXIT_STATUS transitionState(ACS *acs){
  *	handles events off the CAN bus
  */
 EXIT_STATUS handleEvent(ACS *acs){
+  chprintf(DEBUG_CHP,"Entered handleEvent...\n\r",0);
 	EXIT_STATUS status = STATUS_SUCCESS;
 	chEvtWaitAny(ALL_EVENTS);	
+  chprintf(DEBUG_CHP,"Received Event: %u \n\r", status);
 /// ******critical section*******
 	chSysLock();
 	for(int i = 0;i < CAN_BUF_SIZE; ++i){
@@ -242,6 +248,7 @@ EXIT_STATUS handleEvent(ACS *acs){
 	chSysUnlock();
 /// ******end critical section*******
 	
+  chprintf(DEBUG_CHP,"CMD: %u \n\r", acs->cmd[CAN_CMD_0]);
 	switch(acs->cmd[CAN_CMD_0]){
 		case CHANGE_STATE:
 			status = transitionState(acs);
@@ -267,13 +274,16 @@ EXIT_STATUS handleEvent(ACS *acs){
  *	ACS statemachine entry
  */
 extern EXIT_STATUS acs_statemachine(ACS *acs){
-/*
+//*
 	acs->state.current = entry_rdy(acs);
 	acs->fn_exit = exit_rdy;
 //*/
+/*
 	acs->state.current = entry_rw(acs);
 	acs->fn_exit = exit_rw;
+//*/
 
+  chprintf(DEBUG_CHP,"Entering acs_statemachine...\n\r",0);
 	while(!chThdShouldTerminateX()){
 		handleEvent(acs);
     chThdSleepMilliseconds(100);
@@ -289,8 +299,23 @@ extern EXIT_STATUS acs_statemachine(ACS *acs){
 } 
 
 /**
- *	ACS thread working area and thread
- *	function.
+ *	ACS thread working area and thread *	function.
+ */
+THD_WORKING_AREA(waCANDBG_Thread,ACS_THREAD_SIZE);
+THD_FUNCTION(CANDBG_Thread,acs){
+  chRegSetThreadName("can_dbg_thread");
+  
+  uint8_t ping = 0u;
+  while(1){
+    chSysLock();
+    ((ACS *)acs)->can_buf.status[CAN_STATUS_PING] = ++ping;
+    chSysUnlock();
+    chThdSleepMilliseconds(5*1000);
+  }
+}
+
+/**
+ *	ACS thread working area and thread *	function.
  */
 THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 THD_FUNCTION(ACS_Thread,acs){
@@ -300,3 +325,4 @@ THD_FUNCTION(ACS_Thread,acs){
 
 	acs_statemachine(acs);
 }
+

@@ -18,6 +18,7 @@
 /**
  *	Serial debugging
  */
+#define CH_DBG_SYSTEM_STATE_CHECK TRUE
 #define DEBUG_SERIAL SD2
 #define DEBUG_CHP ((BaseSequentialStream *) &DEBUG_SERIAL)
 
@@ -41,11 +42,11 @@ typedef enum{
  *	the L4 becomes available
  */
 typedef enum{
-	ST_NOP=0u,
-	ST_RDY,		// low power
-	ST_RW,
-	ST_MTQR,
-	ST_MAX_PWR
+	ST_NOP=0u,  // 0
+	ST_RDY,		  // 1
+	ST_RW,      // 2
+	ST_MTQR,    // 3
+	ST_MAX_PWR  // 4
 }ACS_VALID_STATE;
 
 #define NUM_VALID_STATES (int)(sizeof(ACS_VALID_STATE))
@@ -155,11 +156,14 @@ typedef enum{
 	CAN_FN_STATUS,			//
 	CAN_STATUS_5,
 	CAN_STATUS_6,
-	CAN_STATUS_7
+	CAN_STATUS_PING    //CAN_STATUS_7
 }CAN_STATUS_BUF;
 
 extern THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 extern THD_FUNCTION(ACS_Thread, arg);
+
+extern THD_WORKING_AREA(waCANDBG_Thread,ACS_THREAD_SIZE);
+extern THD_FUNCTION(CANDBG_Thread, arg);
 
 extern EXIT_STATUS acs_init(ACS *acs);
 
