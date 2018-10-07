@@ -5,6 +5,7 @@
 #include "hal.h"
 #include "stdint.h"
 #include "oresat.h"
+#include "chprintf.h"
 //#include "bldc.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
@@ -15,12 +16,28 @@
 #define CAN_BUF_SIZE		8			/// bytes in buffer
 #define CAN_NODE_ID			0x3F	/// max 0x7F
 
+#define DEBUG_OUT
+//#define DEBUG_LOOP
+
 /**
  *	Serial debugging
  */
 #define CH_DBG_SYSTEM_STATE_CHECK TRUE
 #define DEBUG_SERIAL SD2
 #define DEBUG_CHP ((BaseSequentialStream *) &DEBUG_SERIAL)
+
+inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
+{
+#ifndef DEBUG_OUT
+  (void)message;
+  (void)arg;
+  (void)delay;
+#endif
+#ifdef DEBUG_OUT
+  chprintf(DEBUG_CHP, message, arg);
+	chThdSleepMilliseconds(delay);
+#endif
+}
 
 /**
  *	Function return status
@@ -46,17 +63,20 @@ typedef enum{
 	ST_RDY,		  // 1
 	ST_RW,      // 2
 	ST_MTQR,    // 3
-	ST_MAX_PWR  // 4
+	ST_MAX_PWR, // 4
+  /// do not add any states after ST_END
+  ST_END      /// not an actual state
 }ACS_VALID_STATE;
 
-#define NUM_VALID_STATES (int)(sizeof(ACS_VALID_STATE))
+//#define NUM_VALID_STATES (int)(sizeof(ACS_VALID_STATE))
 
 /**
  *	Valid Functions
  */
 typedef enum{
-	FN_RW_SETDC=0u,
-	FN_MTQR_SETDC//,
+  FN_RW_SETDC=0u,
+	FN_MTQR_SETDC,
+  FN_END
 }ACS_VALID_FUNCTION;
 
 #define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
@@ -67,8 +87,9 @@ typedef enum{
  */
 typedef enum{
 	NOP=0u,
-	CHANGE_STATE,
-	CALL_FUNCTION
+	CMD_CHANGE_STATE,
+	CMD_CALL_FUNCTION,
+  CMD_END
 }ACS_VALID_COMMAND;
 
 #define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
@@ -86,7 +107,9 @@ typedef struct{
  *	State information struct
  */
 typedef struct{
-	uint8_t last,current,next;
+	uint8_t last;
+  uint8_t current;
+  uint8_t next;
 }ACS_STATE;
 
 /**
@@ -139,7 +162,8 @@ typedef enum{
 	CAN_CMD_4,
 	CAN_CMD_5,
 	CAN_CMD_6,
-	CAN_CMD_7
+	CAN_CMD_7,
+  CAN_CMD_END
 }CAN_COMMAND_BUF;
 
 /**
@@ -156,20 +180,18 @@ typedef enum{
 	CAN_FN_STATUS,			//
 	CAN_STATUS_5,
 	CAN_STATUS_6,
-	CAN_STATUS_PING    //CAN_STATUS_7
+	CAN_STATUS_PING,    //CAN_STATUS_7
+  CAN_STATUS_END
 }CAN_STATUS_BUF;
 
 extern THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 extern THD_FUNCTION(ACS_Thread, arg);
 
-extern THD_WORKING_AREA(waCANDBG_Thread,ACS_THREAD_SIZE);
-extern THD_FUNCTION(CANDBG_Thread, arg);
+#ifdef DEBUG_LOOP
+THD_WORKING_AREA(waCANDBG_Thread,ACS_THREAD_SIZE);
+THD_FUNCTION(CANDBG_Thread, arg);
+#endif
 
-extern EXIT_STATUS acs_init(ACS *acs);
-
-extern acs_transition_rule trans[];
-extern acs_function_rule func[];
-
-extern EXIT_STATUS acs_statemachine(ACS *acs);
+EXIT_STATUS acs_init(ACS *acs);
 
 #endif

@@ -5,7 +5,7 @@
  *	event_lister is used for synchronization between 
  *	the ACS and the CAN thread
  */
-event_listener_t el;
+static event_listener_t el;
 
 /**
  *	@brief ACS initialization function
@@ -25,6 +25,7 @@ inline static EXIT_STATUS entry_helper(ACS *acs, ACS_VALID_STATE next_state){
 	acs->can_buf.status[CAN_SM_STATE] = next_state;
 	chSysUnlock();
 /// ******end critical section*******
+  dbgSerialOut("entry_helper: %u \n\r", next_state, 300);
 	return STATUS_SUCCESS;
 }
 
@@ -33,6 +34,7 @@ inline static EXIT_STATUS entry_helper(ACS *acs, ACS_VALID_STATE next_state){
  *	@brief buffer. this relects the change of the current state to previous
  */
 inline static EXIT_STATUS exit_helper(ACS *acs){
+  dbgSerialOut("exit_helper: %u \n\r", acs->can_buf.status[CAN_SM_STATE], 300);
 /// ******critical section*******
 	chSysLock();
 	acs->can_buf.status[CAN_SM_PREV_STATE] = acs->can_buf.status[CAN_SM_STATE];
@@ -119,23 +121,28 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs){
 /**
  *	Set reaction wheel duty cycle
  */
+/*
 static EXIT_STATUS fn_rw_setdc(ACS *acs){
 	(void)acs;
 	return STATUS_SUCCESS;
 }
+*/
 
 /**
  *	Set magnetorquer duty cycle
  */
+/*
 static EXIT_STATUS fn_mtqr_setdc(ACS *acs){
 	(void)acs;
 	return STATUS_SUCCESS;
 }
+*/
 
 /**
  *	Set magnetorquer duty cycle
  */
-acs_function_rule func[] = {
+/*
+static acs_function_rule func[] = {
 	{ST_RW, 			FN_RW_SETDC,		&fn_rw_setdc},
 	{ST_MTQR, 		FN_MTQR_SETDC,	&fn_mtqr_setdc},
 	{ST_MAX_PWR, 	FN_RW_SETDC,		&fn_rw_setdc},
@@ -143,22 +150,25 @@ acs_function_rule func[] = {
 };
 
 #define FUNC_COUNT (int)(sizeof(func)/sizeof(acs_function_rule))
+//*/
 
 /**
  *
  */
+/*
 static EXIT_STATUS callFunction(ACS *acs){
 	int i;
 	EXIT_STATUS exit_status;
 
 	for(i = 0;i < FUNC_COUNT;++i){
-		if(acs->state.current == func[i].state){
-			if(acs->function == func[i].function){
+		if(acs->state.current == func[i].state)
+    {
+			if(acs->function == func[i].function)
+      {
 				exit_status = (func[i].fn)(acs);
-				if(exit_status != STATUS_SUCCESS){
-//					printf("function call error!\n");
-            chprintf(DEBUG_CHP,"Function call error: %u \n\r", exit_status);
-//					TODO: Make this make sense in firmware land
+				if(exit_status != STATUS_SUCCESS)
+        {
+          dbgSerialOut("funcionCallError: %u \n\r", exit_status, 300);
 				}
 				break;
 			}
@@ -167,12 +177,13 @@ static EXIT_STATUS callFunction(ACS *acs){
 
 	return acs->state.current;
 }
+//*/
 
 /**
  *	acs_transition_rule: defines valid state transitions
  *	and associates them with an entry and exit function
  */
-acs_transition_rule trans[] = {
+static acs_transition_rule trans[] = {
 	{ST_RDY,			ST_RW,				&entry_rw,				&exit_rdy},
 	{ST_RDY,			ST_MTQR,			&entry_mtqr,			&exit_rdy},
 	{ST_RDY,			ST_MAX_PWR,		&entry_max_pwr,		&exit_rdy},
@@ -190,7 +201,8 @@ acs_transition_rule trans[] = {
 /**
  *
  */
-EXIT_STATUS requestFunction(ACS *acs){
+/*
+static EXIT_STATUS requestFunction(ACS *acs){
 	int function =0;
 //	char input[3]="";
 
@@ -209,37 +221,50 @@ EXIT_STATUS requestFunction(ACS *acs){
 	callFunction(acs);
 	return STATUS_SUCCESS;
 }
+//*/
 
 /**
  *	transitionState
  */
-EXIT_STATUS transitionState(ACS *acs){
+static EXIT_STATUS transitionState(ACS *acs){
 	ACS_VALID_STATE state = acs->cmd[CAN_CMD_ARG];
-	if(state <= ST_NOP || state >= NUM_VALID_STATES){
-  chprintf(DEBUG_CHP,"ERROR: %u \n\r", state);
+
+  dbgSerialOut("StateRequest: %u\n\r", state, 300);
+	
+  if(state <= ST_NOP || state >= ST_END)
+  {
+    dbgSerialOut("InvalidState: %u \n\r", state, 300);
 		return STATUS_INVALID_STATE; 
 	}
-	for (int i = 0;i < TRANS_COUNT;++i){
-		if((acs->state.current==trans[i].cur_state)&&(state==trans[i].req_state)){
-      chprintf(DEBUG_CHP,"Changing to state: %u \n\r", state);
-			acs->fn_exit(acs);
+
+	for (int i = 0;i < TRANS_COUNT;++i)
+  {
+		if((acs->state.current == trans[i].cur_state) && (state == trans[i].req_state))
+    {
+      dbgSerialOut("ValidChange: %u\n\r", state, 1000);
+      acs->fn_exit(acs);
 			acs->fn_exit=trans[i].fn_exit;
 			acs->state.current = (trans[i].fn_entry)(acs);
+
 			return STATUS_SUCCESS;
 		}
+    else
+    {
+      dbgSerialOut("InvalidChange: %u\n\r", state, 1000);
+    }
 	}
+
 	return STATUS_INVALID_TRANSITION;
 }
 
 /**
  *	handles events off the CAN bus
  */
-EXIT_STATUS handleEvent(ACS *acs){
-  chprintf(DEBUG_CHP,"Entered handleEvent...\n\r",0);
+static EXIT_STATUS handleEvent(ACS *acs){
 	EXIT_STATUS status = STATUS_SUCCESS;
+
 	chEvtWaitAny(ALL_EVENTS);	
-  chprintf(DEBUG_CHP,"Received Event: %u \n\r", status);
-/// ******critical section*******
+  /// ******critical section*******
 	chSysLock();
 	for(int i = 0;i < CAN_BUF_SIZE; ++i){
 		acs->cmd[i] = acs->can_buf.cmd[i];
@@ -248,9 +273,9 @@ EXIT_STATUS handleEvent(ACS *acs){
 	chSysUnlock();
 /// ******end critical section*******
 	
-  chprintf(DEBUG_CHP,"CMD: %u \n\r", acs->cmd[CAN_CMD_0]);
+  dbgSerialOut("CommandReceived: %u \n\r", acs->cmd[CAN_CMD_0], 300);
 	switch(acs->cmd[CAN_CMD_0]){
-		case CHANGE_STATE:
+		case CMD_CHANGE_STATE:
 			status = transitionState(acs);
 		/// ******critical section*******
 			chSysLock();
@@ -258,7 +283,7 @@ EXIT_STATUS handleEvent(ACS *acs){
 			chSysUnlock();
 		/// ******end critical section*******
 			break;
-		case CALL_FUNCTION:
+		case CMD_CALL_FUNCTION:
 			/* not ready yet
 			requestFunction(acs);
 			//*/
@@ -273,7 +298,7 @@ EXIT_STATUS handleEvent(ACS *acs){
 /**
  *	ACS statemachine entry
  */
-extern EXIT_STATUS acs_statemachine(ACS *acs){
+static EXIT_STATUS acs_statemachine(ACS *acs){
 //*
 	acs->state.current = entry_rdy(acs);
 	acs->fn_exit = exit_rdy;
@@ -283,7 +308,7 @@ extern EXIT_STATUS acs_statemachine(ACS *acs){
 	acs->fn_exit = exit_rw;
 //*/
 
-  chprintf(DEBUG_CHP,"Entering acs_statemachine...\n\r",0);
+  dbgSerialOut("Entering acs_statemachine...\n\r", 0, 300);
 	while(!chThdShouldTerminateX()){
 		handleEvent(acs);
     chThdSleepMilliseconds(100);
@@ -297,10 +322,22 @@ extern EXIT_STATUS acs_statemachine(ACS *acs){
 	
 	return STATUS_SUCCESS;
 } 
-
 /**
  *	ACS thread working area and thread *	function.
  */
+THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
+THD_FUNCTION(ACS_Thread,acs){
+  chRegSetThreadName("acs_thread");
+  
+  chEvtRegister(&rpdo_event,&el,0);
+
+	acs_statemachine(acs);
+}
+
+/**
+ *	ACS debug loop
+ */
+#ifdef DEBUG_LOOP
 THD_WORKING_AREA(waCANDBG_Thread,ACS_THREAD_SIZE);
 THD_FUNCTION(CANDBG_Thread,acs){
   chRegSetThreadName("can_dbg_thread");
@@ -313,16 +350,6 @@ THD_FUNCTION(CANDBG_Thread,acs){
     chThdSleepMilliseconds(5*1000);
   }
 }
+#endif
 
-/**
- *	ACS thread working area and thread *	function.
- */
-THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
-THD_FUNCTION(ACS_Thread,acs){
-//	((ACS *)acs)->state.current=1;
-
-  chRegSetThreadName("acs_thread");
-
-	acs_statemachine(acs);
-}
 

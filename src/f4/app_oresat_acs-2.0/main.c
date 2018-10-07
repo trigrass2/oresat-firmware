@@ -19,14 +19,13 @@
  */
 #include "ch.h"
 #include "hal.h"
-#include "chprintf.h"
 
 /** 
  *	Project header files
  */
 #include "acs.h"
 
-ACS acs = {  }; /// Global ACS struct
+ACS acs = { }; /// Global ACS struct
 
 /**
  *	Structure for serial configuration
@@ -56,7 +55,7 @@ static void app_init(void){
 	canTPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,0,0,CAN_BUF_SIZE,acs.can_buf.status);
 	acs_init(&acs);
 	sdStart(&DEBUG_SERIAL, &ser_cfg);	/// Start serial support
-  chprintf(DEBUG_CHP,"Serial driver started...\n\r",0);
+  dbgSerialOut("Serial driver started...\n\r", 0, 300);
 }
 
 /**
@@ -72,7 +71,7 @@ static void app_main(void){
 		&acs	
 	);
 //*/
-//*
+#ifdef DEBUG_LOOP
 	chThdCreateStatic( /// Create ACS thread
 		waCANDBG_Thread,
 		sizeof(waCANDBG_Thread),
@@ -80,8 +79,7 @@ static void app_main(void){
 		CANDBG_Thread,
 		&acs	
 	);
-//*/
-
+#endif
 	while(true){ /// main loop
 		chThdSleepMilliseconds(1000);
 	}
