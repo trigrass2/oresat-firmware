@@ -30,7 +30,8 @@ ACS acs = { }; /// Global ACS struct
 /**
  *	Structure for serial configuration
  */
-static SerialConfig ser_cfg ={
+static SerialConfig ser_cfg =
+{
 	115200,  /// Baud rate
 	0,       //
 	0,       //
@@ -42,26 +43,33 @@ static SerialConfig ser_cfg ={
  *  /// TODO: fix the board file so
  *	/// this can go away
  */
-static void pinConfig(void){
+static void pinConfig(void)
+{
 //	palSetPadMode(GPIOA,GPIOA_LED_GREEN,PAL_MODE_OUTPUT_PUSHPULL);
 };
 
 /**
  *	App initialization function
  */
-static void app_init(void){
+static void app_init(void)
+{
 	pinConfig();
-	canRPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,CAN_BUF_SIZE,acs.can_buf.cmd);
+
+  canRPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,CAN_BUF_SIZE,acs.can_buf.cmd);
 	canTPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,0,0,CAN_BUF_SIZE,acs.can_buf.status);
-	acs_init(&acs);
-	sdStart(&DEBUG_SERIAL, &ser_cfg);	/// Start serial support
+
+  acs_init(&acs);
+
+  sdStart(&DEBUG_SERIAL, &ser_cfg);	/// Start serial support
+
   dbgSerialOut("Serial driver started...\n\r", 0, 300);
 }
 
 /**
  * App main function
  */
-static void app_main(void){
+static void app_main(void)
+{
 //*
 	chThdCreateStatic( /// Create ACS thread
 		waACS_Thread,
@@ -71,6 +79,7 @@ static void app_main(void){
 		&acs	
 	);
 //*/
+
 #ifdef DEBUG_LOOP
 	chThdCreateStatic( /// Create ACS thread
 		waCANDBG_Thread,
@@ -80,7 +89,9 @@ static void app_main(void){
 		&acs	
 	);
 #endif
-	while(true){ /// main loop
+
+  while(true)
+  { /// main loop
 		chThdSleepMilliseconds(1000);
 	}
 }
@@ -88,7 +99,8 @@ static void app_main(void){
 /**
  * Application main function
  */
-int main(void){
+int main(void)
+{
 	/**
 	 * ChibiOS and OreSat init
 	 */

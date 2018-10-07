@@ -42,13 +42,14 @@ inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
 /**
  *	Function return status
  */
-typedef enum{
+typedef enum
+{
 	STATUS_SUCCESS=0u,
 	STATUS_FAILURE,
 	STATUS_INVALID_CMD,
 	STATUS_INVALID_STATE,
 	STATUS_INVALID_TRANSITION
-}EXIT_STATUS;
+} EXIT_STATUS;
 
 /**
  *	Valid ACS states
@@ -58,7 +59,8 @@ typedef enum{
  *	the F4 and then add appropriate low power states when
  *	the L4 becomes available
  */
-typedef enum{
+typedef enum
+{
 	ST_NOP=0u,  // 0
 	ST_RDY,		  // 1
 	ST_RW,      // 2
@@ -66,18 +68,19 @@ typedef enum{
 	ST_MAX_PWR, // 4
   /// do not add any states after ST_END
   ST_END      /// not an actual state
-}ACS_VALID_STATE;
+} ACS_VALID_STATE;
 
 //#define NUM_VALID_STATES (int)(sizeof(ACS_VALID_STATE))
 
 /**
  *	Valid Functions
  */
-typedef enum{
+typedef enum
+{
   FN_RW_SETDC=0u,
 	FN_MTQR_SETDC,
   FN_END
-}ACS_VALID_FUNCTION;
+} ACS_VALID_FUNCTION;
 
 #define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
 
@@ -85,12 +88,13 @@ typedef enum{
  *	ACS_VALID_COMMAND: Exhaustive list of valid commands
  *	received off the CAN bus
  */
-typedef enum{
+typedef enum
+{
 	NOP=0u,
 	CMD_CHANGE_STATE,
 	CMD_CALL_FUNCTION,
   CMD_END
-}ACS_VALID_COMMAND;
+} ACS_VALID_COMMAND;
 
 #define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
 
@@ -98,19 +102,21 @@ typedef enum{
  *	CAN buffer structure for command
  *	and status 
  */
-typedef struct{
+typedef struct
+{
 	uint8_t cmd[CAN_BUF_SIZE];
 	uint8_t status[CAN_BUF_SIZE];
-}CAN_BUFFER;
+} CAN_BUFFER;
 
 /**
  *	State information struct
  */
-typedef struct{
+typedef struct
+{
 	uint8_t last;
   uint8_t current;
   uint8_t next;
-}ACS_STATE;
+} ACS_STATE;
 
 /**
  *	ACS: State and control information struct
@@ -120,7 +126,8 @@ typedef struct{
  */
 typedef struct ACS ACS;
 
-struct ACS{
+struct ACS
+{
 	ACS_STATE state;
 	CAN_BUFFER can_buf;
 	uint8_t cmd[CAN_BUF_SIZE];
@@ -132,29 +139,32 @@ struct ACS{
  *	acs_transition_rule: defines the structure of a valid
  *	transition.
  */
-typedef struct{
+typedef struct
+{
 	ACS_VALID_STATE cur_state;
 	ACS_VALID_STATE req_state;
 	ACS_VALID_STATE (*fn_entry)(ACS *acs);
 	ACS_VALID_STATE (*fn_exit)(ACS *acs);
-}acs_transition_rule;
+} acs_transition_rule;
 
 /**
  *	acs_function_rule: rule structure for the valid rule
  *	table
  */
-typedef struct{
+typedef struct
+{
 	ACS_VALID_STATE state;
 	ACS_VALID_FUNCTION function;
 	EXIT_STATUS (*fn)(ACS *acs);
-}acs_function_rule;
+} acs_function_rule;
 
 /**
  * Buffer for receiving commands off the CAN bus
  * TODO: These fields need to be defined and
  * adherred to 
  */
-typedef enum{
+typedef enum
+{
 	CAN_CMD_0=0,
 	CAN_CMD_ARG,	//CAN_CMD_1,
 	CAN_CMD_2,
@@ -164,7 +174,7 @@ typedef enum{
 	CAN_CMD_6,
 	CAN_CMD_7,
   CAN_CMD_END
-}CAN_COMMAND_BUF;
+} CAN_COMMAND_BUF;
 
 /**
  * Buffer for maintaining and reporting both
@@ -182,7 +192,7 @@ typedef enum{
 	CAN_STATUS_6,
 	CAN_STATUS_PING,    //CAN_STATUS_7
   CAN_STATUS_END
-}CAN_STATUS_BUF;
+} CAN_STATUS_BUF;
 
 extern THD_WORKING_AREA(waACS_Thread,ACS_THREAD_SIZE);
 extern THD_FUNCTION(ACS_Thread, arg);
