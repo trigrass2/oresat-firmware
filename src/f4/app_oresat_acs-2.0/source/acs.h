@@ -75,7 +75,8 @@ typedef enum
  */
 typedef enum
 {
-  FN_RW_SETDC=0u,
+  FN_NOP = 0u, 
+  FN_RW_SETDC,
 	FN_MTQR_SETDC,
   FN_END
 } ACS_VALID_FUNCTION;

@@ -8,9 +8,10 @@ bldc *motor;
  *
  *
  */
-static void adcerrorcallback(ADCDriver *adcp, adcerror_t err) {
-    (void)adcp;
-    (void)err;
+static void adcerrorcallback(ADCDriver *adcp, adcerror_t err)
+{
+  (void)adcp;
+  (void)err;
 }
 
 /**
@@ -33,7 +34,8 @@ static const ADCConversionGroup adcgrpcfg = {
 };
 //*/
 
-static const ADCConversionGroup adcgrpcfg = {
+static const ADCConversionGroup adcgrpcfg = 
+{
   TRUE,
   ADC_GRP_NUM_CHANNELS,
   NULL,
@@ -56,7 +58,8 @@ static const ADCConversionGroup adcgrpcfg = {
  * of 0 - 2^14 into a value of 0 - 360, in 6 separate ranges
  *
  */
-static uint16_t encoderToLut(uint16_t position){
+static uint16_t encoderToLut(uint16_t position)
+{
   uint16_t step = 0;
   uint8_t chunk = (position * CHUNK_AMOUNT) / ENCODER_MAX;
   step = ((position - chunk_low[chunk]) * (STEPS)) / CHUNK_SIZE;
@@ -96,7 +99,8 @@ THD_FUNCTION(spiThread,arg){
  * @brief Scales the duty ccycle value from LUT 0 - 100%
  *
  */
-static sinctrl_t scale(sinctrl_t duty_cycle){
+static sinctrl_t scale(sinctrl_t duty_cycle)
+{
 	return ((duty_cycle*motor->scale)/100) + ((10000*(motor->scale/2))/100);	
 }
 
@@ -109,11 +113,13 @@ static sinctrl_t scale(sinctrl_t duty_cycle){
  * repeating, to modify the LUT values on the fly.
  *
  */
-static void pwmpcb(PWMDriver *pwmp) {
+static void pwmpcb(PWMDriver *pwmp) 
+{
   (void)pwmp;
   
   /// If open loop, ignore encoder feedback.
-	if(motor->openLoop){
+	if(motor->openLoop)
+  {
 		motor->u += motor->skip;
 		motor->v += motor->skip;
 		motor->w += motor->skip;
@@ -125,8 +131,11 @@ static void pwmpcb(PWMDriver *pwmp) {
 		motor->current_sin_u = motor->sinctrl[motor->u];
 		motor->current_sin_v = motor->sinctrl[motor->v];
 		motor->current_sin_w = motor->sinctrl[motor->w];
-	}else{
-		if (motor->stretch_count == 0){
+	}
+  else
+  {
+		if (motor->stretch_count == 0)
+    {
 			motor->u = encoderToLut(motor->position);
 			motor->v = (motor->u + motor->phase_shift) % 360;
 			motor->w = (motor->v + motor->phase_shift) % 360;
@@ -190,13 +199,14 @@ static PWMConfig pwmRWcfg = {
  * @brief Sets up initial values for the BLDC object
  *
  */
-extern void bldcInit(bldc *pbldc){
+extern void bldcInit(bldc *pbldc)
+{
 	motor = pbldc;
 	motor->steps = STEPS;
 	motor->stretch = STRETCH;
-  	motor->stretch_count = 0;
+  motor->stretch_count = 0;
 	motor->scale = SCALE;
-  	motor->skip = SKIP;
+  motor->skip = SKIP;
 	motor->sinctrl = sinctrl360;
 	motor->count = 0;
 	motor->position = 0;
@@ -223,8 +233,10 @@ extern void bldcInit(bldc *pbldc){
  * @brief Enables the three PWM channels, starting to go through the LUT
  *
  */
-extern void bldcStart(bldc *pbldc){
-	if(pbldc->started){
+extern void bldcStart(bldc *pbldc)
+{
+	if(pbldc->started)
+  {
 		return; 
 	}
 	pwmStart(&PWMD1,&pwmRWcfg);
@@ -240,8 +252,10 @@ extern void bldcStart(bldc *pbldc){
  * @brief Stops BLDC control
  *
  */
-extern void bldcStop(bldc *pbldc){
-	if(!pbldc->started){
+extern void bldcStop(bldc *pbldc)
+{
+	if(!pbldc->started)
+  {
 		return;
 	}
 	pwmDisableChannel(&PWMD1,PWM_U);
@@ -256,7 +270,8 @@ extern void bldcStop(bldc *pbldc){
  * @brief Changes duty cycle for a given channel
  *
  */
-extern void bldcSetDC(uint8_t channel,uint16_t dc){
+extern void bldcSetDC(uint8_t channel,uint16_t dc)
+{
 	pwmEnableChannelI(
 		&PWMD1,
 		channel,
@@ -268,8 +283,10 @@ extern void bldcSetDC(uint8_t channel,uint16_t dc){
  * @brief Tear down drivers in a sane way.
  *
  */
-extern void bldcExit(bldc *pbldc){
-	if(pbldc->started){
+extern void bldcExit(bldc *pbldc)
+{
+	if(pbldc->started)
+  {
 		bldcStop(pbldc);
 	}
   adcStopConversion(&ADCD1);

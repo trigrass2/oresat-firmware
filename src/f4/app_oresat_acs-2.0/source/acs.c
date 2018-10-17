@@ -168,28 +168,36 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs)
 /**
  *	Set reaction wheel duty cycle
  */
-/*
-static EXIT_STATUS fn_rw_setdc(ACS *acs){
+//*
+static EXIT_STATUS fn_rw_setdc(ACS *acs)
+{
 	(void)acs;
 	return STATUS_SUCCESS;
 }
-*/
+//*/
 
 /**
  *	Set magnetorquer duty cycle
  */
-/*
-static EXIT_STATUS fn_mtqr_setdc(ACS *acs){
+//*
+static EXIT_STATUS fn_mtqr_setdc(ACS *acs)
+{
 	(void)acs;
 	return STATUS_SUCCESS;
 }
-*/
+//*/
 
 /**
  *	Set magnetorquer duty cycle
+ *
+ *	This table enforces functions being
+ *	called from a valid state. 
+ *
+ *	Match functin with states its allowd to be
+ *	called from
  */
-/*
-static acs_function_rule func[] = {
+static acs_function_rule func[] = 
+{
 	{ST_RW, 			FN_RW_SETDC,		&fn_rw_setdc},
 	{ST_MTQR, 		FN_MTQR_SETDC,	&fn_mtqr_setdc},
 	{ST_MAX_PWR, 	FN_RW_SETDC,		&fn_rw_setdc},
@@ -197,17 +205,18 @@ static acs_function_rule func[] = {
 };
 
 #define FUNC_COUNT (int)(sizeof(func)/sizeof(acs_function_rule))
-//*/
 
 /**
  *
  */
-/*
-static EXIT_STATUS callFunction(ACS *acs){
+//*
+static EXIT_STATUS callFunction(ACS *acs)
+{
 	int i;
 	EXIT_STATUS exit_status;
 
-	for(i = 0;i < FUNC_COUNT;++i){
+	for(i = 0;i < FUNC_COUNT;++i)
+  {
 		if(acs->state.current == func[i].state)
     {
 			if(acs->function == func[i].function)
@@ -252,24 +261,21 @@ static acs_transition_rule valid_transition[] =
 #define TRANS_COUNT (int)(sizeof(valid_transition)/sizeof(acs_transition_rule))
 
 /**
+ *  @brief
  *
+ *  @param 
  */
-/*
-static EXIT_STATUS requestFunction(ACS *acs){
-	int function =0;
-//	char input[3]="";
+//*
+static EXIT_STATUS requestFunction(ACS *acs)
+{
+	ACS_VALID_FUNCTION function = acs->cmd[CAN_CMD_ARG];
 
-// *******************************************
-// TODO: this whole section need to be ported to CAN input
-// for the F4
-//	printf("\nrequest function call$ ");
-//	scanf(" %s", input);
-//	function = atoi(input);
-	if(function < FN_RW_SETDC || function >= FUNC_COUNT){
-//		printf("error, invalid function call: %d\n",function);
+	if(function <= FN_NOP || function >= FUNC_COUNT)
+  {
+    dbgSerialOut("error, invalid function call: %%u\n\r", function, 1000);
 		return STATUS_FAILURE; 
 	}
-//	printf("function call request %s received\n", function_name[function]);
+  dbgSerialOut("function request received\n: %%u\n\r", function, 1000);
 	acs->function = function;
 	callFunction(acs);
 	return STATUS_SUCCESS;
@@ -293,7 +299,7 @@ static EXIT_STATUS transitionState(ACS *acs)
 
 	for (int i = 0;i < TRANS_COUNT;++i)
   {
-		if((acs->state.current == valid_transition[i].cur_state)&& 
+		if((acs->state.current == valid_transition[i].cur_state) && 
         (state == valid_transition[i].req_state))
     {
       dbgSerialOut("ValidChange: %u\n\r", state, 1000);
@@ -358,7 +364,7 @@ static EXIT_STATUS handleEvent(ACS *acs)
       changeStatus(acs, CAN_SM_STATUS, status);
 			break;
 		case CMD_CALL_FUNCTION:
-			/* not ready yet
+			//* not ready yet
 			requestFunction(acs);
 			//*/
 			break;
