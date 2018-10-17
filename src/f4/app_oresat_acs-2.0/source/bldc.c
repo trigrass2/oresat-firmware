@@ -1,18 +1,19 @@
 #include "bldc.h"
-#include "sin_lut.h"
+#include "acs_common.h"
 
-bldc *motor;
+//BLDCMotor *pMotor;
 
 /**
  * @brief Currently not used.
  *
- *
  */
+/*
 static void adcerrorcallback(ADCDriver *adcp, adcerror_t err)
 {
   (void)adcp;
   (void)err;
 }
+//*/
 
 /**
  * TODO: combine this with a timer to not spam interrupts so much?
@@ -34,38 +35,22 @@ static const ADCConversionGroup adcgrpcfg = {
 };
 //*/
 
+/*
 static const ADCConversionGroup adcgrpcfg = 
 {
   TRUE,
   ADC_GRP_NUM_CHANNELS,
   NULL,
   adcerrorcallback,
-  0,                        /* CR1 */
-  ADC_CR2_SWSTART,          /* CR2 */
+  0,                        // CR1
+  ADC_CR2_SWSTART,          // CR2
   ADC_SMPR1_SMP_AN11(ADC_SAMPLE_3),
-  0,                        /* SMPR2 */
-  0,                        /* SQR1 */
-  0,                        /* SQR2 */
+  0,                        // SMPR2 
+  0,                        // SQR1 
+  0,                        // SQR2
   ADC_SQR3_SQ1_N(ADC_CHANNEL_IN11)
 };
-
-
-/**
- * @brief Translates encoder position into a useable LUT value
- *
- * Since it takes 6 passes through the LUT to get one physical
- * revolution of the motor, we need a way to index a value
- * of 0 - 2^14 into a value of 0 - 360, in 6 separate ranges
- *
- */
-static uint16_t encoderToLut(uint16_t position)
-{
-  uint16_t step = 0;
-  uint8_t chunk = (position * CHUNK_AMOUNT) / ENCODER_MAX;
-  step = ((position - chunk_low[chunk]) * (STEPS)) / CHUNK_SIZE;
-
-  return step;
-}
+//*/
 
 /**
  * @brief Handles the SPI transaction, getting the position from the encoder
@@ -73,21 +58,22 @@ static uint16_t encoderToLut(uint16_t position)
  */
 THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
 THD_FUNCTION(spiThread,arg){
-  (void)arg;
-	chRegSetThreadName("spiThread");
+  BLDCMotor *pMotor = (BLDCMotor *)arg;
+  chRegSetThreadName("spiThread");
 
   spiStart(&SPID1,&spicfg);            	// Start driver.
   spiAcquireBus(&SPID1);                // Gain ownership of bus.
 
-  while (!chThdShouldTerminateX()) {
-		motor->spi_rxbuf[0] = 0;
+  while (!chThdShouldTerminateX()) 
+  {
+		pMotor->spi_rxbuf[0] = 0;
 		spiSelect(&SPID1);                  // Select slave.
 
 		while(SPID1.state != SPI_READY) {}   
-		spiReceive(&SPID1,1,motor->spi_rxbuf); // Receive 1 frame (16 bits).
+		spiReceive(&SPID1, 1, pMotor->spi_rxbuf); // Receive 1 frame (16 bits).
 		spiUnselect(&SPID1);                // Unselect slave.
 
-		motor->position = 0x3FFF & motor->spi_rxbuf[0];
+		pMotor->position = 0x3FFF & pMotor->spi_rxbuf[0];
 	 
   }
 
@@ -99,73 +85,21 @@ THD_FUNCTION(spiThread,arg){
  * @brief Scales the duty ccycle value from LUT 0 - 100%
  *
  */
-static sinctrl_t scale(sinctrl_t duty_cycle)
+/*
+static dutycycle_t scale(dutycycle_t duty_cycle)
 {
-	return ((duty_cycle*motor->scale)/100) + ((10000*(motor->scale/2))/100);	
+	return ((duty_cycle*pMotor->scale)/100) + ((10000*(pMotor->scale/2))/100);	
 }
+//*/
 
 /**
  * @brief Periodic callback of the PWM driver
- *
- * At the end of each period, we call this, and go to the next 
- * step in the LUT, which changes absed off of closed or open
- * loop control. Holds the logic for stretching, skipping, and
- * repeating, to modify the LUT values on the fly.
  *
  */
 static void pwmpcb(PWMDriver *pwmp) 
 {
   (void)pwmp;
-  
-  /// If open loop, ignore encoder feedback.
-	if(motor->openLoop)
-  {
-		motor->u += motor->skip;
-		motor->v += motor->skip;
-		motor->w += motor->skip;
 
-		motor->u = motor->u % 360;
-		motor->v = motor->v % 360;
-		motor->w = motor->w % 360;
-				
-		motor->current_sin_u = motor->sinctrl[motor->u];
-		motor->current_sin_v = motor->sinctrl[motor->v];
-		motor->current_sin_w = motor->sinctrl[motor->w];
-	}
-  else
-  {
-		if (motor->stretch_count == 0)
-    {
-			motor->u = encoderToLut(motor->position);
-			motor->v = (motor->u + motor->phase_shift) % 360;
-			motor->w = (motor->v + motor->phase_shift) % 360;
-			motor->current_sin_u = motor->sinctrl[motor->u];
-			motor->current_sin_v = motor->sinctrl[motor->v];
-			motor->current_sin_w = motor->sinctrl[motor->w];
-			motor->next_sin_u = motor->sinctrl[motor->u+1];
-			motor->next_sin_v = motor->sinctrl[motor->v+1];
-			motor->next_sin_w = motor->sinctrl[motor->w+1];
-
-			/// Calculate the difference between the current step in the LUT
-			/// and the next step in the LUT, and break it up
-			/// into the desired amount of steps in between the two
-			motor->sin_diff = (motor->current_sin_u > motor->next_sin_u)?
-												(motor->current_sin_u - motor->next_sin_u) : 
-												(motor->next_sin_u - motor->current_sin_u);
-			motor->sin_diff = motor->sin_diff / motor->stretch;
-			motor->stretch_count = motor->stretch;
-		}
-
-		motor->current_sin_u += motor->sin_diff;
-		motor->current_sin_v += motor->sin_diff;
-		motor->current_sin_w += motor->sin_diff;
-
-		motor->stretch_count = motor->stretch_count - 1;
-	}
-
-	bldcSetDC(PWM_U,motor->current_sin_u);
-	bldcSetDC(PWM_V,motor->current_sin_v);
-	bldcSetDC(PWM_W,motor->current_sin_w);
 }
 
 /**
@@ -196,36 +130,32 @@ static PWMConfig pwmRWcfg = {
 };
 
 /**
- * @brief Sets up initial values for the BLDC object
+ * @brief Sets up initial values for the BLDCMotor object
  *
  */
-extern void bldcInit(bldc *pbldc)
+extern void bldcInit(BLDCMotor *pMotor)
 {
-	motor = pbldc;
-	motor->steps = STEPS;
-	motor->stretch = STRETCH;
-  motor->stretch_count = 0;
-	motor->scale = SCALE;
-  motor->skip = SKIP;
-	motor->sinctrl = sinctrl360;
-	motor->count = 0;
-	motor->position = 0;
-	motor->phase_shift = motor->steps/3;
-	motor->u = 0;
-	motor->v = motor->u + motor->phase_shift;
-	motor->w = motor->v + motor->phase_shift;
-  motor->openLoop = true;
-	motor->started = FALSE;
+//	pMotor = pMotor;
+  pMotor->skip = SKIP;
+  pMotor->pSinLut = sin_lut;
+  pMotor->count = 0;
+  pMotor->position = 0;
+  pMotor->phase_shift = pMotor->steps/3;
+  pMotor->u = 0;
+  pMotor->v = pMotor->u + pMotor->phase_shift;
+  pMotor->w = pMotor->v + pMotor->phase_shift;
+  pMotor->isOpenLoop = true;
+  pMotor->isStarted = false;
 	
-	adcStart(&ADCD1, NULL); 
-  adcStartConversion(&ADCD1, &adcgrpcfg, motor->samples, ADC_GRP_BUF_DEPTH);
+	//adcStart(&ADCD1, NULL); 
+  //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
 	
-	motor->p_spi_thread=chThdCreateStatic(
+	pMotor->p_spi_thread=chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
 		NORMALPRIO,
 		spiThread,
-		NULL
+		pMotor
 	);
 }
 
@@ -233,28 +163,28 @@ extern void bldcInit(bldc *pbldc)
  * @brief Enables the three PWM channels, starting to go through the LUT
  *
  */
-extern void bldcStart(bldc *pbldc)
+extern void bldcStart(BLDCMotor *pMotor)
 {
-	if(pbldc->started)
+	if(pMotor->isStarted)
   {
 		return; 
 	}
 	pwmStart(&PWMD1,&pwmRWcfg);
   pwmEnablePeriodicNotification(&PWMD1);
 	
-	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,motor->u));
-  pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,motor->v));
-  pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,motor->w));
-	pbldc->started = TRUE;
+	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->u));
+  pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->v));
+  pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->w));
+	pMotor->isStarted = true;
 }
 
 /**
- * @brief Stops BLDC control
+ * @brief Stops BLDCMotor control
  *
  */
-extern void bldcStop(bldc *pbldc)
+extern void bldcStop(BLDCMotor *pMotor)
 {
-	if(!pbldc->started)
+	if(!pMotor->isStarted)
   {
 		return;
 	}
@@ -263,7 +193,7 @@ extern void bldcStop(bldc *pbldc)
   pwmDisableChannel(&PWMD1,PWM_W);
   pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
-	pbldc->started = FALSE;
+	pMotor->isStarted = FALSE;
 }
 
 /**
@@ -275,7 +205,7 @@ extern void bldcSetDC(uint8_t channel,uint16_t dc)
 	pwmEnableChannelI(
 		&PWMD1,
 		channel,
-		PWM_PERCENTAGE_TO_WIDTH(&PWMD1,scale(dc))
+		PWM_PERCENTAGE_TO_WIDTH(&PWMD1,dc)
 	);
 }
 
@@ -283,14 +213,14 @@ extern void bldcSetDC(uint8_t channel,uint16_t dc)
  * @brief Tear down drivers in a sane way.
  *
  */
-extern void bldcExit(bldc *pbldc)
+extern void bldcExit(BLDCMotor *pMotor)
 {
-	if(pbldc->started)
+	if(pMotor->isStarted)
   {
-		bldcStop(pbldc);
+		bldcStop(pMotor);
 	}
   adcStopConversion(&ADCD1);
   adcStop(&ADCD1); 
-	chThdTerminate(motor->p_spi_thread);
-	chThdWait(motor->p_spi_thread);
+	chThdTerminate(pMotor->p_spi_thread);
+	chThdWait(pMotor->p_spi_thread);
 }

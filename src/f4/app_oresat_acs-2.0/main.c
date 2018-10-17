@@ -19,6 +19,7 @@
  */
 #include "ch.h"
 #include "hal.h"
+#include "acs_common.h"
 
 /** 
  *	Project header files

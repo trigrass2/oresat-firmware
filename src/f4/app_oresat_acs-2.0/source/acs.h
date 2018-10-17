@@ -3,8 +3,7 @@
 
 #include "stdint.h"
 #include "oresat.h"
-#include "chprintf.h"
-//#include "bldc.h"
+#include "bldc.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
 
@@ -14,28 +13,8 @@
 #define CAN_BUF_SIZE		8			/// bytes in buffer
 #define CAN_NODE_ID			0x3F	/// max 0x7F
 
-#define DEBUG_OUT
+//#define DEBUG_OUT
 //#define DEBUG_LOOP
-
-/**
- *	Serial debugging
- */
-#define CH_DBG_SYSTEM_STATE_CHECK TRUE
-#define DEBUG_SERIAL SD2
-#define DEBUG_CHP ((BaseSequentialStream *) &DEBUG_SERIAL)
-
-inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
-{
-#ifndef DEBUG_OUT
-  (void)message;
-  (void)arg;
-  (void)delay;
-#endif
-#ifdef DEBUG_OUT
-  chprintf(DEBUG_CHP, message, arg);
-	chThdSleepMilliseconds(delay);
-#endif
-}
 
 /**
  *	Function return status
@@ -132,6 +111,7 @@ struct ACS
 	uint8_t cmd[CAN_BUF_SIZE];
 	ACS_VALID_FUNCTION function;
 	ACS_VALID_STATE (*fn_exit)(ACS *acs);
+  BLDCMotor motor;
 };
 
 /**

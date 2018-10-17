@@ -1,6 +1,7 @@
 #include "acs.h"
 #include "ch.h"
 #include "hal.h"
+#include "acs_common.h"
 
 /**
  *	event_lister is used for synchronization between 
@@ -15,6 +16,7 @@ extern EXIT_STATUS acs_init(ACS *acs)
 {
 	(void)acs;
 	// need to initialize things
+  bldcInit(&acs->motor);
 	return STATUS_SUCCESS;
 }	
 
