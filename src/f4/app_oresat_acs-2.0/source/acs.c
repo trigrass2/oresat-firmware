@@ -1,5 +1,4 @@
 #include "acs.h"
-#include "chprintf.h"
 
 /**
  *	event_lister is used for synchronization between 

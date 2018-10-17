@@ -81,7 +81,7 @@ static void app_main(void)
 //*/
 
 #ifdef DEBUG_LOOP
-	chThdCreateStatic( /// Create ACS thread
+	chThdCreateStatic( /// Create CANdbg thread
 		waCANDBG_Thread,
 		sizeof(waCANDBG_Thread),
 		NORMALPRIO,

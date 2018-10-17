@@ -44,7 +44,7 @@ inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
  */
 typedef enum
 {
-	STATUS_SUCCESS=0u,
+	STATUS_SUCCESS = 0u,
 	STATUS_FAILURE,
 	STATUS_INVALID_CMD,
 	STATUS_INVALID_STATE,
@@ -61,11 +61,11 @@ typedef enum
  */
 typedef enum
 {
-	ST_NOP=0u,  // 0
-	ST_RDY,		  // 1
-	ST_RW,      // 2
-	ST_MTQR,    // 3
-	ST_MAX_PWR, // 4
+	ST_NOP = 0u,  /// 0
+	ST_RDY,       /// 1
+	ST_RW,        /// 2
+	ST_MTQR,      /// 3
+	ST_MAX_PWR,   /// 4
   /// do not add any states after ST_END
   ST_END      /// not an actual state
 } ACS_VALID_STATE;
@@ -190,7 +190,7 @@ typedef enum{
 	CAN_FN_STATUS,			//
 	CAN_STATUS_5,
 	CAN_STATUS_6,
-	CAN_STATUS_PING,    //CAN_STATUS_7
+	CAN_STATUS_PING,    //CAN_STATUS_7 // for CAN dbg
   CAN_STATUS_END
 } CAN_STATUS_BUF;
 
@@ -204,4 +204,4 @@ THD_FUNCTION(CANDBG_Thread, arg);
 
 EXIT_STATUS acs_init(ACS *acs);
 
-#endif
+#endif // end ACS_H
