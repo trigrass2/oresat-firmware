@@ -1,4 +1,6 @@
 #include "acs.h"
+#include "ch.h"
+#include "hal.h"
 
 /**
  *	event_lister is used for synchronization between 
@@ -57,8 +59,6 @@ inline static EXIT_STATUS exit_helper(ACS *acs)
  */
 static ACS_VALID_STATE entry_rdy(ACS *acs)
 {
-	(void)acs;
-	
   entry_helper(acs, ST_RDY);
 	
   return ST_RDY;
@@ -71,10 +71,8 @@ static ACS_VALID_STATE entry_rdy(ACS *acs)
  */
 static ACS_VALID_STATE exit_rdy(ACS *acs)
 {
-	(void)acs;
-	
   exit_helper(acs);
-	
+  
   return ST_RDY;
 }
 
@@ -85,8 +83,6 @@ static ACS_VALID_STATE exit_rdy(ACS *acs)
  */
 static ACS_VALID_STATE entry_rw(ACS *acs)
 {
-	(void)acs;
-	
   entry_helper(acs, ST_RW);
 	
   return ST_RW;
@@ -99,8 +95,6 @@ static ACS_VALID_STATE entry_rw(ACS *acs)
  */
 static ACS_VALID_STATE exit_rw(ACS *acs)
 {
-	(void)acs;
-	
   exit_helper(acs);
 	
   return ST_RW;
@@ -117,8 +111,6 @@ static ACS_VALID_STATE exit_rw(ACS *acs)
  */ 
 static ACS_VALID_STATE entry_mtqr(ACS *acs)
 {
-	(void)acs;
-	
   entry_helper(acs, ST_MTQR);
 	
   return ST_MTQR;
@@ -129,9 +121,8 @@ static ACS_VALID_STATE entry_mtqr(ACS *acs)
  *
  *	@param acs pointer to an ACS struct
  */
-static ACS_VALID_STATE exit_mtqr(ACS *acs){
-	(void)acs;
-	
+static ACS_VALID_STATE exit_mtqr(ACS *acs)
+{
   exit_helper(acs);
 	
   return ST_MTQR;
@@ -145,8 +136,6 @@ static ACS_VALID_STATE exit_mtqr(ACS *acs){
  */
 static ACS_VALID_STATE entry_max_pwr(ACS *acs)
 {
-	(void)acs;
-	
   entry_helper(acs, ST_MAX_PWR);
 	
   return ST_MAX_PWR;
@@ -159,8 +148,6 @@ static ACS_VALID_STATE entry_max_pwr(ACS *acs)
  */
 static ACS_VALID_STATE exit_max_pwr(ACS *acs)
 {
-	(void)acs;
-	
   exit_helper(acs);
 	
   return ST_MAX_PWR;
@@ -245,7 +232,11 @@ static EXIT_STATUS callFunction(ACS *acs){
  */
 static acs_transition_rule valid_transition[] = 
 {
-	{ST_RDY,			ST_RW,				&entry_rw,				&exit_rdy},
+/**
+ * ------_-state----------    ----transition functions------
+ * this         next          entry func        exit func
+ */
+  {ST_RDY,			ST_RW,				&entry_rw,				&exit_rdy},
 	{ST_RDY,			ST_MTQR,			&entry_mtqr,			&exit_rdy},
 	{ST_RDY,			ST_MAX_PWR,		&entry_max_pwr,		&exit_rdy},
 	{ST_RW,				ST_MAX_PWR,		&entry_max_pwr,		&exit_rw},

@@ -1,8 +1,6 @@
 #ifndef _ACS_H_
 #define _ACS_H_
 
-#include "ch.h"
-#include "hal.h"
 #include "stdint.h"
 #include "oresat.h"
 #include "chprintf.h"
@@ -182,7 +180,8 @@ typedef enum
  * TODO: These fields need to be defined and
  * adherred to 
  */
-typedef enum{
+typedef enum
+{
 	CAN_SM_STATE = 0,		//
 	CAN_SM_PREV_STATE,	//
 	CAN_SM_STATUS,			//
@@ -204,4 +203,4 @@ THD_FUNCTION(CANDBG_Thread, arg);
 
 EXIT_STATUS acs_init(ACS *acs);
 
-#endif // end ACS_H
+#endif // end _ACS_H_
