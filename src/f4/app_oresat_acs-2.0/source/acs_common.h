@@ -1,13 +1,11 @@
-#ifndef _ACS_DBG_
-#define _ACS_DBG_
+#ifndef _ACS_COMMON_
+#define _ACS_COMMON_
 
 #include "chprintf.h" 
 #include "oresat.h"
 #include "stdint.h"
 
 //#define DEBUG_OUT
-
-
 
 /**
  *	Serial debugging
@@ -37,11 +35,13 @@ inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
  */
 typedef enum
 {
-	STATUS_SUCCESS = 0u,
+	STATUS_SUCCESS = 0,
 	STATUS_FAILURE,
+  // state machine status
 	STATUS_INVALID_CMD,
 	STATUS_INVALID_STATE,
 	STATUS_INVALID_TRANSITION
+  // bldc status
 } EXIT_STATUS;
 
 #endif // end _ACS_COMMON_

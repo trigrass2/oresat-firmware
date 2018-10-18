@@ -25,7 +25,7 @@
  */
 typedef enum
 {
-	ST_NOP = 0u,  /// 0
+	ST_NOP = 0,  /// 0
 	ST_RDY,       /// 1
 	ST_RW,        /// 2
 	ST_MTQR,      /// 3
@@ -41,7 +41,7 @@ typedef enum
  */
 typedef enum
 {
-  FN_NOP = 0u, 
+  FN_NOP = 0, 
   FN_RW_SETDC,
 	FN_MTQR_SETDC,
   FN_END
@@ -55,7 +55,7 @@ typedef enum
  */
 typedef enum
 {
-	NOP=0u,
+	CMD_NOP = 0,
 	CMD_CHANGE_STATE,
 	CMD_CALL_FUNCTION,
   CMD_END

@@ -57,8 +57,8 @@ static void app_init(void)
 	pinConfig();
 
   /// Initialize CAN
-  canRPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,CAN_BUF_SIZE,acs.can_buf.cmd);
-	canTPDOObjectInit(CAN_PDO_1,CAN_ID_DEFAULT,0,0,CAN_BUF_SIZE,acs.can_buf.status);
+  canRPDOObjectInit(CAN_PDO_1, CAN_ID_DEFAULT, CAN_BUF_SIZE, acs.can_buf.cmd);
+	canTPDOObjectInit(CAN_PDO_1, CAN_ID_DEFAULT, 0, 0, CAN_BUF_SIZE, acs.can_buf.status);
 
   acs_init(&acs);
 
@@ -76,7 +76,7 @@ static void app_main(void)
 	chThdCreateStatic( /// Create ACS thread
 		waACS_Thread,
 		sizeof(waACS_Thread),
-		NORMALPRIO+1,
+		NORMALPRIO + 1,
 		ACS_Thread,
 		&acs	
 	);

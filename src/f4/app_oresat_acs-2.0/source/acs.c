@@ -356,12 +356,14 @@ static EXIT_STATUS handleEvent(ACS *acs)
 	
   switch(acs->cmd[CAN_CMD_0])
   {
+    case CMD_NOP:
+      break;
 		case CMD_CHANGE_STATE:
 			status = transitionState(acs);
       changeStatus(acs, CAN_SM_STATUS, status);
 			break;
 		case CMD_CALL_FUNCTION:
-			//* not ready yet
+			//* TODO: Test me please
 			requestFunction(acs);
 			//*/
 			break;
