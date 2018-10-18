@@ -1,9 +1,8 @@
 #ifndef _ACS_H_
 #define _ACS_H_
 
-#include "stdint.h"
-#include "oresat.h"
 #include "bldc.h"
+#include "acs_common.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
 
@@ -15,18 +14,6 @@
 
 //#define DEBUG_OUT
 //#define DEBUG_LOOP
-
-/**
- *	Function return status
- */
-typedef enum
-{
-	STATUS_SUCCESS = 0u,
-	STATUS_FAILURE,
-	STATUS_INVALID_CMD,
-	STATUS_INVALID_STATE,
-	STATUS_INVALID_TRANSITION
-} EXIT_STATUS;
 
 /**
  *	Valid ACS states

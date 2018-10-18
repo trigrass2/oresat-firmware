@@ -1,7 +1,6 @@
 #include "acs.h"
 #include "ch.h"
 #include "hal.h"
-#include "acs_common.h"
 
 /**
  *	event_lister is used for synchronization between 

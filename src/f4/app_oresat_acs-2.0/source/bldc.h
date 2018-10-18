@@ -8,25 +8,16 @@
 #include <unistd.h>
 
 #define THREAD_SIZE	(1<<7)
+#define ENCODER_MAX (1<<14)
 
 /**
  *
  */
-//#define SCALE			100
 #define STEPS			LUT_SIZE 
-//#define STRETCH		1
 #define SKIP      1
 
-/// encoder has 14 bits of precision
-#define ENCODER_MAX 1<<14
-/// chunk amount is the number of times through
-/// the LUT for 1 revolution of the reaction wheel
-//#define CHUNK_AMOUNT 6
-/// chunk size is the number
-//#define CHUNK_SIZE 2730
-
-#define PWM_TIMER_FREQ	48e6 /// Hz
-#define PWM_FREQ				15e3 /// periods per sec
+#define PWM_TIMER_FREQ	1e6 /// Hz
+#define PWM_FREQ				10e3 /// periods per sec
 #define PWM_PERIOD			PWM_TIMER_FREQ/PWM_FREQ 
 
 /// PWM signals
@@ -43,23 +34,24 @@
  *
  */
 typedef struct{
-	uint16_t count;		/// period counter
-	uint16_t steps;		/// number of steps in lut 
-  uint16_t skip;
-	dutycycle_t u;    /// PWM signal
-	dutycycle_t v;    /// PWM signal
-	dutycycle_t w;    /// PWM signal
-	uint32_t phase_shift;		/// should be by 120 degrees 
-  //uint16_t current_sin_u, next_sin_u,
-  //         current_sin_v, next_sin_v,
-  //         current_sin_w, next_sin_w;
-	uint16_t position;				// motor position from encoder
-	dutycycle_t const *pSinLut; // pointer to the sin lut
-	uint16_t spi_rxbuf[2]; // receive buffer
-	thread_t *p_spi_thread;
+	dutycycle_t u;              /// PWM signal
+	dutycycle_t v;              /// PWM signal
+	dutycycle_t w;              /// PWM signal
+  uint32_t phaseShift;       /// should be by 120 degrees 
+	
+  dutycycle_t const *pSinLut; /// pointer to the sin lut
+  uint16_t periodCount;             /// period counter
+  uint16_t position;
+	
   bool isOpenLoop;
   bool isStarted;
-  adcsample_t samples[ADC_GRP_NUM_CHANNELS * ADC_GRP_BUF_DEPTH]; // ADC conversion storage array
+
+  // ADC conversion storage array
+  adcsample_t samples[ADC_GRP_NUM_CHANNELS * ADC_GRP_BUF_DEPTH]; 
+  
+  // spy things	
+  uint16_t spiRxBuffer[2]; // receive buffer
+	thread_t *pSpiThread;
 } BLDCMotor;
 
 /**
@@ -73,7 +65,7 @@ typedef struct{
  */
 static const SPIConfig spicfg;
 /*
-	static const SPIConfig spicfg = {
+static const SPIConfig spicfg = {
 	false,             // circular buffer.
 	NULL,              // operation complete callback callback pointer
 	GPIOA,                                                // Chip select line.
@@ -89,7 +81,7 @@ extern THD_FUNCTION(spiThread,arg);
 extern void bldcInit(BLDCMotor *pMotor);
 extern void bldcStart(BLDCMotor *pMotor);
 extern void bldcStop(BLDCMotor *pMotor);
-extern void bldcSetDC(uint8_t channel,uint16_t dc);
+extern void bldcSetDutyCycle(uint8_t channel, dutycycle_t dc);
 extern void bldcExit(BLDCMotor *pMotor);
 
 #endif

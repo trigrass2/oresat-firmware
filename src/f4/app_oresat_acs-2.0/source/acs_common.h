@@ -2,6 +2,8 @@
 #define _ACS_DBG_
 
 #include "chprintf.h" 
+#include "oresat.h"
+#include "stdint.h"
 
 //#define DEBUG_OUT 
 
@@ -24,6 +26,18 @@ inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
 	chThdSleepMilliseconds(delay);
 #endif
 }
+
+/**
+ *	Function return status
+ */
+typedef enum
+{
+	STATUS_SUCCESS = 0u,
+	STATUS_FAILURE,
+	STATUS_INVALID_CMD,
+	STATUS_INVALID_STATE,
+	STATUS_INVALID_TRANSITION
+} EXIT_STATUS;
 
 #endif // end _ACS_COMMON_
 

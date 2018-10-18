@@ -1,8 +1,6 @@
 #include "bldc.h"
 #include "acs_common.h"
 
-//BLDCMotor *pMotor;
-
 /**
  * @brief Currently not used.
  *
@@ -57,24 +55,25 @@ static const ADCConversionGroup adcgrpcfg =
  *
  */
 THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
-THD_FUNCTION(spiThread,arg){
-  BLDCMotor *pMotor = (BLDCMotor *)arg;
+THD_FUNCTION(spiThread,arg)
+{
   chRegSetThreadName("spiThread");
+  
+  BLDCMotor *pMotor = (BLDCMotor *)arg;
 
   spiStart(&SPID1,&spicfg);            	// Start driver.
   spiAcquireBus(&SPID1);                // Gain ownership of bus.
 
-  while (!chThdShouldTerminateX()) 
+  while(!chThdShouldTerminateX()) 
   {
-		pMotor->spi_rxbuf[0] = 0;
+		pMotor->spiRxBuffer[0] = 0;
 		spiSelect(&SPID1);                  // Select slave.
 
 		while(SPID1.state != SPI_READY) {}   
-		spiReceive(&SPID1, 1, pMotor->spi_rxbuf); // Receive 1 frame (16 bits).
+		spiReceive(&SPID1, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
 		spiUnselect(&SPID1);                // Unselect slave.
 
-		pMotor->position = 0x3FFF & pMotor->spi_rxbuf[0];
-	 
+		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
   }
 
 	spiReleaseBus(&SPID1);    // Release ownership of bus.
@@ -96,7 +95,7 @@ static dutycycle_t scale(dutycycle_t duty_cycle)
  * @brief Periodic callback of the PWM driver
  *
  */
-static void pwmpcb(PWMDriver *pwmp) 
+static void pwmPeriodCallback(PWMDriver *pwmp) 
 {
   (void)pwmp;
 
@@ -114,10 +113,11 @@ static void pwmpcb(PWMDriver *pwmp)
  * and no channel callback
  *
  */
-static PWMConfig pwmRWcfg = {
+static PWMConfig pwmRWcfg = 
+{
   PWM_TIMER_FREQ,	
   PWM_PERIOD,	
-  pwmpcb,
+  pwmPeriodCallback,
   {
    {PWM_OUTPUT_ACTIVE_HIGH|PWM_COMPLEMENTARY_OUTPUT_ACTIVE_HIGH, NULL},
    {PWM_OUTPUT_ACTIVE_HIGH|PWM_COMPLEMENTARY_OUTPUT_ACTIVE_HIGH, NULL},
@@ -135,21 +135,20 @@ static PWMConfig pwmRWcfg = {
  */
 extern void bldcInit(BLDCMotor *pMotor)
 {
-//	pMotor = pMotor;
-  pMotor->skip = SKIP;
   pMotor->pSinLut = sin_lut;
-  pMotor->count = 0;
+  pMotor->periodCount = 0;
   pMotor->position = 0;
-  pMotor->phase_shift = pMotor->steps/3;
+  pMotor->phaseShift = LUT_SIZE/3;
   pMotor->u = 0;
-  pMotor->v = pMotor->u + pMotor->phase_shift;
-  pMotor->w = pMotor->v + pMotor->phase_shift;
+  pMotor->v = pMotor->u + pMotor->phaseShift;
+  pMotor->w = pMotor->v + pMotor->phaseShift;
   pMotor->isOpenLoop = true;
   pMotor->isStarted = false;
 	
 	//adcStart(&ADCD1, NULL); 
   //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
-	
+
+/*
 	pMotor->p_spi_thread=chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
@@ -157,6 +156,8 @@ extern void bldcInit(BLDCMotor *pMotor)
 		spiThread,
 		pMotor
 	);
+//*/
+
 }
 
 /**
@@ -200,7 +201,7 @@ extern void bldcStop(BLDCMotor *pMotor)
  * @brief Changes duty cycle for a given channel
  *
  */
-extern void bldcSetDC(uint8_t channel,uint16_t dc)
+extern void bldcSetDutyCycle(uint8_t channel, dutycycle_t dc)
 {
 	pwmEnableChannelI(
 		&PWMD1,
@@ -221,6 +222,6 @@ extern void bldcExit(BLDCMotor *pMotor)
 	}
   adcStopConversion(&ADCD1);
   adcStop(&ADCD1); 
-	chThdTerminate(pMotor->p_spi_thread);
-	chThdWait(pMotor->p_spi_thread);
+	chThdTerminate(pMotor->pSpiThread);
+	chThdWait(pMotor->pSpiThread);
 }
