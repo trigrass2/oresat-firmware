@@ -132,13 +132,13 @@ typedef struct
 typedef enum
 {
 	CAN_CMD_0=0,
-	CAN_CMD_ARG,	//CAN_CMD_1,
-	CAN_CMD_2,
-	CAN_CMD_3,
-	CAN_CMD_4,
-	CAN_CMD_5,
-	CAN_CMD_6,
-	CAN_CMD_7,
+	CAN_CMD_ARG,	// CAN_CMD_1,
+	CAN_CMD_2,    // not being used atm
+	CAN_CMD_3,    // nbu atm
+	CAN_CMD_4,    // nbu atm
+	CAN_CMD_5,    // nbu atm
+	CAN_CMD_6,    // nbu atm
+	CAN_CMD_7,    // nbu atm
   CAN_CMD_END
 } CAN_COMMAND_BUF;
 
@@ -155,9 +155,9 @@ typedef enum
 	CAN_SM_STATUS,			//
 	CAN_FN_CALLED,			//
 	CAN_FN_STATUS,			//
-	CAN_STATUS_5,
-	CAN_STATUS_6,
-	CAN_STATUS_PING,    //CAN_STATUS_7 // for CAN dbg
+	CAN_STATUS_5,       // nbu atm
+	CAN_STATUS_6,       // nbu atm
+	CAN_STATUS_PING,    // CAN_STATUS_7 // for CAN dbg
   CAN_STATUS_END
 } CAN_STATUS_BUF;
 

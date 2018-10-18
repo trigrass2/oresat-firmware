@@ -22,14 +22,14 @@ static void adcerrorcallback(ADCDriver *adcp, adcerror_t err)
  */
 /*
 static const ADCConversionGroup adcgrpcfg = {
-    TRUE,
-    ADC_GRP_NUM_CHANNELS,
-    NULL,
-    adcerrorcallback,
-    ADC_CFGR1_CONT | ADC_CFGR1_RES_12BIT,      // CFGRR1 
-    ADC_TR(0, 0),                              // TR 
-    ADC_SMPR_SMP_239P5,                        // SMPR 
-    ADC_CHSELR_CHSEL0                          // CHSELR 
+  TRUE,
+  ADC_GRP_NUM_CHANNELS,
+  NULL,
+  adcerrorcallback,
+  ADC_CFGR1_CONT | ADC_CFGR1_RES_12BIT,      // CFGRR1 
+  ADC_TR(0, 0),                              // TR 
+  ADC_SMPR_SMP_239P5,                        // SMPR 
+  ADC_CHSELR_CHSEL0                          // CHSELR 
 };
 //*/
 
@@ -69,8 +69,12 @@ THD_FUNCTION(spiThread,arg)
 		pMotor->spiRxBuffer[0] = 0;
 		spiSelect(&SPID1);                  // Select slave.
 
-		while(SPID1.state != SPI_READY) {}   
-		spiReceive(&SPID1, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
+		while(SPID1.state != SPI_READY) 
+    { 
+      // do nothing 
+    }   
+		
+    spiReceive(&SPID1, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
 		spiUnselect(&SPID1);                // Unselect slave.
 
 		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
@@ -98,7 +102,7 @@ static dutycycle_t scale(dutycycle_t duty_cycle)
 static void pwmPeriodCallback(PWMDriver *pwmp) 
 {
   (void)pwmp;
-
+  // TODO: WOW! This is boring now...
 }
 
 /**
@@ -113,7 +117,7 @@ static void pwmPeriodCallback(PWMDriver *pwmp)
  * and no channel callback
  *
  */
-static PWMConfig pwmRWcfg = 
+static PWMConfig pwmRwConfig = 
 {
   PWM_TIMER_FREQ,	
   PWM_PERIOD,	
@@ -170,7 +174,7 @@ extern void bldcStart(BLDCMotor *pMotor)
   {
 		return; 
 	}
-	pwmStart(&PWMD1,&pwmRWcfg);
+	pwmStart(&PWMD1,&pwmRwConfig);
   pwmEnablePeriodicNotification(&PWMD1);
 	
 	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->u));

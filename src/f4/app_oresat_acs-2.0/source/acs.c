@@ -157,12 +157,10 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs)
 /**
  *	Function definitions
  *
- *	These functions are validified using the 
- *	acs_function_rule struct. Functions are 
- *	represented in the struct by pointers
- *	which are associated with a valid state
- *	and valid function name to create a rule 
- *	that allows functions to only be called 
+ *	These functions are validified using the acs_function_rule 
+ *	struct. Functions are represented in the struct by pointers
+ *	which are associated with a valid state and valid function 
+ *	name to create a rule that allows functions to only be called 
  *	from an allowed state.
  */
 
@@ -266,7 +264,6 @@ static acs_transition_rule valid_transition[] =
  *
  *  @param 
  */
-//*
 static EXIT_STATUS requestFunction(ACS *acs)
 {
 	ACS_VALID_FUNCTION function = acs->cmd[CAN_CMD_ARG];
@@ -281,7 +278,6 @@ static EXIT_STATUS requestFunction(ACS *acs)
 	callFunction(acs);
 	return STATUS_SUCCESS;
 }
-//*/
 
 /**
  *	transitionState

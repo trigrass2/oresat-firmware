@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #define THREAD_SIZE	(1<<7)
-#define ENCODER_MAX (1<<14)
+#define ENCODER_MAX (1<<14) - 1
 
 /**
  *
@@ -16,7 +16,7 @@
 #define STEPS			LUT_SIZE 
 #define SKIP      1
 
-#define PWM_TIMER_FREQ	1e6 /// Hz
+#define PWM_TIMER_FREQ	1e6  /// Hz
 #define PWM_FREQ				10e3 /// periods per sec
 #define PWM_PERIOD			PWM_TIMER_FREQ/PWM_FREQ 
 
@@ -31,16 +31,15 @@
 /**
  * @brief The structure that defines and characterizes
  * a motor and how it's being control
- *
  */
 typedef struct{
 	dutycycle_t u;              /// PWM signal
 	dutycycle_t v;              /// PWM signal
 	dutycycle_t w;              /// PWM signal
-  uint32_t phaseShift;       /// should be by 120 degrees 
+  uint32_t phaseShift;        /// should be by 120 degrees 
 	
   dutycycle_t const *pSinLut; /// pointer to the sin lut
-  uint16_t periodCount;             /// period counter
+  uint16_t periodCount;       /// period counter
   uint16_t position;
 	
   bool isOpenLoop;

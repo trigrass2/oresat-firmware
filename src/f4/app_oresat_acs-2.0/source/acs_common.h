@@ -5,7 +5,9 @@
 #include "oresat.h"
 #include "stdint.h"
 
-//#define DEBUG_OUT 
+//#define DEBUG_OUT
+
+
 
 /**
  *	Serial debugging
@@ -14,6 +16,8 @@
 #define DEBUG_SERIAL SD2
 #define DEBUG_CHP ((BaseSequentialStream *) &DEBUG_SERIAL)
 
+//* 
+// TODO: This is gross! Replace with a proper debugging macro
 inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
 {
 #ifndef DEBUG_OUT
@@ -26,6 +30,7 @@ inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
 	chThdSleepMilliseconds(delay);
 #endif
 }
+//*/
 
 /**
  *	Function return status
