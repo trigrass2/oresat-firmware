@@ -26,7 +26,9 @@
 #define PWM_W			2U
 
 #define ADC_GRP_NUM_CHANNELS  1
-#define ADC_GRP_BUF_DEPTH     8 
+#define ADC_GRP_BUF_DEPTH     8
+
+#define SPI_BUF_SIZE 2
 
 /**
  * @brief The structure that defines and characterizes
@@ -42,14 +44,14 @@ typedef struct{
   uint16_t periodCount;       /// period counter
   uint16_t position;
 	
-  bool isOpenLoop;
+  bool isOpenLoop; // gross
   bool isStarted;
 
   // ADC conversion storage array
   adcsample_t samples[ADC_GRP_NUM_CHANNELS * ADC_GRP_BUF_DEPTH]; 
   
   // spy things	
-  uint16_t spiRxBuffer[2]; // receive buffer
+  uint16_t spiRxBuffer[SPI_BUF_SIZE]; // receive buffer
 	thread_t *pSpiThread;
 } BLDCMotor;
 
