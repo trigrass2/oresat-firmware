@@ -20,6 +20,9 @@
 #define PWM_FREQ				10e3 /// periods per sec
 #define PWM_PERIOD			PWM_TIMER_FREQ/PWM_FREQ 
 
+// TODO: define SAMPLE_RATE
+//#define SAMPLE_RATE
+
 /// PWM signals
 #define PWM_U			0U
 #define PWM_V			1U
@@ -30,17 +33,18 @@
 
 #define SPI_BUF_SIZE 2
 
+typedef uint16_t dutycycle_t;
+
 /**
  * @brief The structure that defines and characterizes
  * a motor and how it's being control
  */
 typedef struct{
-	dutycycle_t u;              /// PWM signal
-	dutycycle_t v;              /// PWM signal
-	dutycycle_t w;              /// PWM signal
-  uint32_t phaseShift;        /// should be by 120 degrees 
+	sin_t u;              /// PWM signal
+	sin_t v;              /// PWM signal
+	sin_t w;              /// PWM signal
 	
-  dutycycle_t const *pSinLut; /// pointer to the sin lut
+  sin_t const *pSinLut; /// pointer to the sin lut
   uint16_t periodCount;       /// period counter
   uint16_t position;
 	

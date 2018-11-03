@@ -5,8 +5,8 @@
 
 #define LUT_SIZE 512
 
-typedef uint16_t dutycycle_t;
+typedef double sin_t;
 
-static const dutycycle_t sin_lut[LUT_SIZE];
+static const sin_t sin_lut[LUT_SIZE];
 
 #endif

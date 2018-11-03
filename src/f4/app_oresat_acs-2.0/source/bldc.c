@@ -142,10 +142,9 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->pSinLut = sin_lut;
   pMotor->periodCount = 0;
   pMotor->position = 0;
-  pMotor->phaseShift = LUT_SIZE/3;
-  pMotor->u = 0;
-  pMotor->v = pMotor->u + pMotor->phaseShift;
-  pMotor->w = pMotor->v + pMotor->phaseShift;
+ // pMotor->u = 0;
+ // pMotor->v = pMotor->u + pMotor->phaseShift;
+ // pMotor->w = pMotor->v + pMotor->phaseShift;
   pMotor->isOpenLoop = true;
   pMotor->isStarted = false;
 	
