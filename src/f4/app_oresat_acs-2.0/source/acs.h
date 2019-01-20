@@ -47,7 +47,7 @@ typedef enum
   FN_END
 } ACS_VALID_FUNCTION;
 
-#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
+//#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
 
 /**
  *	ACS_VALID_COMMAND: Exhaustive list of valid commands
@@ -61,7 +61,7 @@ typedef enum
   CMD_END
 } ACS_VALID_COMMAND;
 
-#define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
+//#define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
 
 /**
  *	CAN buffer structure for command
