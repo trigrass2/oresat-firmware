@@ -10,6 +10,7 @@
 /**
  *	Serial debugging
  */
+//#define DEBUG_OUT
 #define CH_DBG_SYSTEM_STATE_CHECK TRUE
 #define DEBUG_SERIAL SD2
 #define DEBUG_CHP ((BaseSequentialStream *) &DEBUG_SERIAL)
@@ -22,8 +23,8 @@ inline void dbgSerialOut(char *message, uint32_t arg, uint32_t delay)
   (void)message;
   (void)arg;
   (void)delay;
-#endif
-#ifdef DEBUG_OUT
+#else
+//#ifdef DEBUG_OUT
   chprintf(DEBUG_CHP, message, arg);
 	chThdSleepMilliseconds(delay);
 #endif

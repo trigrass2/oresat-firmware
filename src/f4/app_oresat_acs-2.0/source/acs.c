@@ -165,12 +165,39 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs)
  */
 
 /**
+ *	Start reaction wheel
+ */
+//*
+static EXIT_STATUS fn_rw_start(ACS *acs)
+{
+	(void)acs;
+  chprintf(DEBUG_CHP, "start bldc");
+  bldcStart(&acs->motor); 
+	return STATUS_SUCCESS;
+}
+//*/
+
+/**
+ *	Stop reaction wheel
+ */
+//*
+static EXIT_STATUS fn_rw_stop(ACS *acs)
+{
+	(void)acs;
+  chprintf(DEBUG_CHP, "stop bldc");
+  bldcStop(&acs->motor); 
+	return STATUS_SUCCESS;
+}
+//*/
+
+/**
  *	Set reaction wheel duty cycle
  */
 //*
 static EXIT_STATUS fn_rw_setdc(ACS *acs)
 {
 	(void)acs;
+  
 	return STATUS_SUCCESS;
 }
 //*/
@@ -198,6 +225,8 @@ static EXIT_STATUS fn_mtqr_setdc(ACS *acs)
 static acs_function_rule func[] = 
 {
 	{ST_RW, 			FN_RW_SETDC,		&fn_rw_setdc},
+	{ST_RW, 			FN_RW_START,		&fn_rw_start},
+	{ST_RW, 			FN_RW_STOP, 		&fn_rw_stop},
 	{ST_MTQR, 		FN_MTQR_SETDC,	&fn_mtqr_setdc},
 	{ST_MAX_PWR, 	FN_RW_SETDC,		&fn_rw_setdc},
 	{ST_MAX_PWR, 	FN_MTQR_SETDC,	&fn_mtqr_setdc}
@@ -212,25 +241,27 @@ static acs_function_rule func[] =
 static EXIT_STATUS callFunction(ACS *acs)
 {
 	int i;
-	EXIT_STATUS exit_status;
+	EXIT_STATUS status = STATUS_SUCCESS;
 
+  dbgSerialOut("Entering callFunction: %u \n\r", status, 300);
+  //*
 	for(i = 0;i < FUNC_COUNT;++i)
   {
 		if(acs->state.current == func[i].state)
     {
 			if(acs->function == func[i].function)
       {
-				exit_status = (func[i].fn)(acs);
-				if(exit_status != STATUS_SUCCESS)
+				status = (func[i].fn)(acs);
+				if(status != STATUS_SUCCESS)
         {
-          dbgSerialOut("funcionCallError: %u \n\r", exit_status, 300);
+          dbgSerialOut("funcionCallError: %u \n\r", status, 300);
 				}
 				break;
 			}
 		}
 	}
-
-	return acs->state.current;
+//*/
+	return status;
 }
 //*/
 
@@ -241,7 +272,7 @@ static EXIT_STATUS callFunction(ACS *acs)
 static acs_transition_rule valid_transition[] = 
 {
 /**
- * ------_-state----------    ----transition functions------
+ * --------state----------    ----transition functions------
  * this         next          entry func        exit func
  */
   {ST_RDY,			ST_RW,				&entry_rw,				&exit_rdy},
@@ -268,12 +299,12 @@ static EXIT_STATUS requestFunction(ACS *acs)
 {
 	ACS_VALID_FUNCTION function = acs->cmd[CAN_CMD_ARG];
 
-	if(function <= FN_NOP || function >= FUNC_COUNT)
+	if(function <= FN_NOP || function >= FN_END)
   {
     dbgSerialOut("error, invalid function call: %%u\n\r", function, 1000);
 		return STATUS_FAILURE; 
 	}
-  dbgSerialOut("function request received\n: %%u\n\r", function, 1000);
+  //dbgSerialOut("function request received\n: %%u\n\r", function, 1000);
 	acs->function = function;
 	callFunction(acs);
 	return STATUS_SUCCESS;
@@ -348,11 +379,11 @@ static EXIT_STATUS handleEvent(ACS *acs)
 {
 	EXIT_STATUS status = STATUS_SUCCESS;
 
-  /// block until there is an even from CAN
+  /// block until there is an event from CAN
   chEvtWaitAny(ALL_EVENTS);	
   receiveCommand(acs); // should probably rename to be more descriptive
 
-  dbgSerialOut("CommandReceived: %u \n\r", acs->cmd[CAN_CMD_0], 500);
+  dbgSerialOut("CommandReceived: %u \n\r", acs->cmd[CAN_CMD_0], 1000);
 	
   switch(acs->cmd[CAN_CMD_0])
   {
@@ -364,14 +395,14 @@ static EXIT_STATUS handleEvent(ACS *acs)
 			break;
 		case CMD_CALL_FUNCTION:
 			//* TODO: Test me please
-			requestFunction(acs);
+			status = requestFunction(acs);
 			//*/
 			break;
 		default:
 			return STATUS_INVALID_CMD;
 	}
 
-	return STATUS_SUCCESS;
+	return status;
 }
 
 /**
@@ -386,7 +417,7 @@ static EXIT_STATUS acs_statemachine(ACS *acs)
 
   while(!chThdShouldTerminateX())
   {
-		handleEvent(acs);
+		handleEvent(acs); // TODO: add error checking
     chThdSleepMilliseconds(100);
 	}
 	

@@ -12,7 +12,7 @@
 #define CAN_BUF_SIZE		8			/// bytes in buffer
 #define CAN_NODE_ID			0x3F	/// max 0x7F
 
-//#define DEBUG_OUT
+#define DEBUG_OUT
 //#define DEBUG_LOOP
 
 /**
@@ -42,6 +42,8 @@ typedef enum
 typedef enum
 {
   FN_NOP = 0, 
+  FN_RW_START,
+  FN_RW_STOP,
   FN_RW_SETDC,
 	FN_MTQR_SETDC,
   FN_END
