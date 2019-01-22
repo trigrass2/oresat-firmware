@@ -12,7 +12,7 @@
 #define CAN_BUF_SIZE		8			/// bytes in buffer
 #define CAN_NODE_ID			0x3F	/// max 0x7F
 
-//#define DEBUG_OUT
+#define DEBUG_OUT
 //#define DEBUG_LOOP
 
 /**
@@ -42,12 +42,14 @@ typedef enum
 typedef enum
 {
   FN_NOP = 0, 
+  FN_RW_START,
+  FN_RW_STOP,
   FN_RW_SETDC,
 	FN_MTQR_SETDC,
   FN_END
 } ACS_VALID_FUNCTION;
 
-#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
+//#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
 
 /**
  *	ACS_VALID_COMMAND: Exhaustive list of valid commands
@@ -61,7 +63,7 @@ typedef enum
   CMD_END
 } ACS_VALID_COMMAND;
 
-#define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
+//#define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
 
 /**
  *	CAN buffer structure for command

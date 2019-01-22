@@ -179,12 +179,12 @@ extern void bldcStart(BLDCMotor *pMotor)
 	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->u));
   pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->v));
   pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->w));
-/*
+//*
   bldcSetDutyCycle(PWM_U,5000);
 	bldcSetDutyCycle(PWM_V,5000);
 	bldcSetDutyCycle(PWM_W,5000);
-*/  
-  pMotor->isStarted = true;
+//*/  
+  pMotor->isStarted = TRUE;
 }
 
 /**
