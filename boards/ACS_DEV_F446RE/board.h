@@ -68,16 +68,16 @@
 #define GPIOA_ADC123_IN0            0U
 #define GPIOA_ARD_A1                1U
 #define GPIOA_ADC123_IN1            1U
-#define GPIOA_ARD_D1                2U
+#define GPIOA_ARD_D1                2U // *GPIOA_TIM2_CH3 // AF1
 #define GPIOA_USART2_TX             2U
-#define GPIOA_ARD_D0                3U
+#define GPIOA_ARD_D0                3U // *GPIOA_EN_MAG // AF0
 #define GPIOA_USART2_RX             3U
-#define GPIOA_ARD_A2                4U
-#define GPIOA_ADC12_IN4             4U
-#define GPIOA_LED_GREEN             5U
+#define GPIOA_ARD_A2                4U // *GPIOA_EN_BLDC // AF0
+#define GPIOA_ADC12_IN4             4U // *SPI1_NSS // AF4
+#define GPIOA_LED_GREEN             5U // *SPI1_SCK // AF4
 #define GPIOA_ARD_D13               5U
 #define GPIOA_ARD_D12               6U
-#define GPIOA_ARD_D11               7U
+#define GPIOA_ARD_D11               7U // *SPI1_MISO // AF4
 #define GPIOA_ARD_D7                8U
 #define GPIOA_TIM1_CH1              8U  /// UH
 #define GPIOA_ARD_D8                9U
