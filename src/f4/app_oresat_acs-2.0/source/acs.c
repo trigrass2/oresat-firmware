@@ -203,12 +203,39 @@ static EXIT_STATUS fn_rw_setdc(ACS *acs)
 //*/
 
 /**
+ *	Start magnetorquer 
+ */
+//*
+static EXIT_STATUS fn_mtqr_start(ACS *acs)
+{
+	(void)acs;
+  chprintf(DEBUG_CHP, "start bldc");
+  mtqrStart(&acs->mtqr); 
+	return STATUS_SUCCESS;
+}
+//*/
+
+/**
+ *	Stop magnetorquer 
+ */
+//*
+static EXIT_STATUS fn_mtqr_stop(ACS *acs)
+{
+	(void)acs;
+  chprintf(DEBUG_CHP, "stop bldc");
+  mtqrStop(&acs->mtqr); 
+	return STATUS_SUCCESS;
+}
+//*/
+
+/**
  *	Set magnetorquer duty cycle
  */
 //*
 static EXIT_STATUS fn_mtqr_setdc(ACS *acs)
 {
 	(void)acs;
+
 	return STATUS_SUCCESS;
 }
 //*/
@@ -228,6 +255,8 @@ static acs_function_rule func[] =
 	{ST_RW, 			FN_RW_START,		&fn_rw_start},
 	{ST_RW, 			FN_RW_STOP, 		&fn_rw_stop},
 	{ST_MTQR, 		FN_MTQR_SETDC,	&fn_mtqr_setdc},
+	{ST_MTQR, 		FN_MTQR_START,	&fn_mtqr_start},
+	{ST_MTQR, 		FN_MTQR_STOP,	  &fn_mtqr_stop},
 	{ST_MAX_PWR, 	FN_RW_SETDC,		&fn_rw_setdc},
 	{ST_MAX_PWR, 	FN_MTQR_SETDC,	&fn_mtqr_setdc}
 };

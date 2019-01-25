@@ -2,6 +2,7 @@
 #define _ACS_H_
 
 #include "bldc.h"
+#include "magnetorquer.h"
 #include "acs_common.h"
 
 #define ACS_THREAD_SIZE	(1<<7)
@@ -25,7 +26,7 @@
  */
 typedef enum
 {
-	ST_NOP = 0,  /// 0
+	ST_NOP = 0,   /// 0
 	ST_RDY,       /// 1
 	ST_RW,        /// 2
 	ST_MTQR,      /// 3
@@ -34,22 +35,21 @@ typedef enum
   ST_END      /// not an actual state
 } ACS_VALID_STATE;
 
-//#define NUM_VALID_STATES (int)(sizeof(ACS_VALID_STATE))
-
 /**
  *	Valid Functions
  */
 typedef enum
 {
-  FN_NOP = 0, 
-  FN_RW_START,
-  FN_RW_STOP,
-  FN_RW_SETDC,
-	FN_MTQR_SETDC,
-  FN_END
+  FN_NOP = 0,     /// 0
+  FN_RW_START,    /// 1
+  FN_RW_STOP,     /// 2
+  FN_RW_SETDC,    /// 3
+	FN_MTQR_START,  /// 4
+	FN_MTQR_STOP,   /// 5
+	FN_MTQR_SETDC,  /// 6
+  /// do not add any functions after FN_END
+  FN_END /// not an actual function name
 } ACS_VALID_FUNCTION;
-
-//#define NUM_VALID_FUNCTIONS (int)(sizeof(ACS_VALID_FUNCTION))
 
 /**
  *	ACS_VALID_COMMAND: Exhaustive list of valid commands
@@ -60,10 +60,9 @@ typedef enum
 	CMD_NOP = 0,
 	CMD_CHANGE_STATE,
 	CMD_CALL_FUNCTION,
+  /// do not add any commands after CMD_END
   CMD_END
 } ACS_VALID_COMMAND;
-
-//#define NUM_VALID_COMMANDS (int)(sizeof(ACS_VALID_COMMAND))
 
 /**
  *	CAN buffer structure for command
@@ -101,6 +100,7 @@ struct ACS
 	ACS_VALID_FUNCTION function;
 	ACS_VALID_STATE (*fn_exit)(ACS *acs);
   BLDCMotor motor;
+  MTQR mtqr;
 };
 
 /**
@@ -135,7 +135,7 @@ typedef enum
 {
 	CAN_CMD_0=0,
 	CAN_CMD_ARG,	// CAN_CMD_1,
-	CAN_CMD_2,    // not being used atm
+	CAN_CMD_2,    // not being used
 	CAN_CMD_3,    // nbu atm
 	CAN_CMD_4,    // nbu atm
 	CAN_CMD_5,    // nbu atm
@@ -157,8 +157,8 @@ typedef enum
 	CAN_SM_STATUS,			//
 	CAN_FN_CALLED,			//
 	CAN_FN_STATUS,			//
-	CAN_STATUS_5,       // nbu atm
-	CAN_STATUS_6,       // nbu atm
+	CAN_STATUS_5,       // nbu
+	CAN_STATUS_6,       // nbu
 	CAN_STATUS_PING,    // CAN_STATUS_7 // for CAN dbg
   CAN_STATUS_END
 } CAN_STATUS_BUF;
