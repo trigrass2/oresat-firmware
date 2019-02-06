@@ -15,8 +15,8 @@
 
 #define PWM_CH_MTQR      			0             /// pwm channel
 #define MTQR_STARTING_DC			5000u         /// starting duty cycle
-#define PH				 						9u		        /// Phase (motor direction)
-#define ENABLE    						GPIOA_EN_MAG	/// Chip enable
+#define PH				 						GPIOC_MAG_PH  /// Phase (motor direction)
+#define ENABLE    						GPIOC_EN_MAG	/// Chip enable
 
 #define EXIT_SUCCESS 					0
 #define EXIT_FAILURE 					1

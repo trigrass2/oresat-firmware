@@ -78,6 +78,7 @@ static void app_init(void)
   sdStart(&DEBUG_SERIAL, &ser_cfg);	/// Start serial support
 
   dbgSerialOut("Serial driver started...\n\r", 0, 300);
+  chprintf(DEBUG_CHP, "Serial test...\n\r");
 }
 
 /**

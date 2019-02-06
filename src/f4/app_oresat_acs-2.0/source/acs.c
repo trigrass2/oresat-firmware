@@ -16,6 +16,7 @@ extern EXIT_STATUS acs_init(ACS *acs)
 	(void)acs;
 	// need to initialize things
   bldcInit(&acs->motor);
+  mtqrInit(&acs->mtqr);
 	return STATUS_SUCCESS;
 }	
 
@@ -171,7 +172,7 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs)
 static EXIT_STATUS fn_rw_start(ACS *acs)
 {
 	(void)acs;
-  chprintf(DEBUG_CHP, "start bldc");
+  chprintf(DEBUG_CHP, "start bldc\n\r");
   bldcStart(&acs->motor); 
 	return STATUS_SUCCESS;
 }
@@ -184,7 +185,7 @@ static EXIT_STATUS fn_rw_start(ACS *acs)
 static EXIT_STATUS fn_rw_stop(ACS *acs)
 {
 	(void)acs;
-  chprintf(DEBUG_CHP, "stop bldc");
+  chprintf(DEBUG_CHP, "stop bldc\n\r");
   bldcStop(&acs->motor); 
 	return STATUS_SUCCESS;
 }
@@ -209,7 +210,7 @@ static EXIT_STATUS fn_rw_setdc(ACS *acs)
 static EXIT_STATUS fn_mtqr_start(ACS *acs)
 {
 	(void)acs;
-  chprintf(DEBUG_CHP, "start bldc");
+  chprintf(DEBUG_CHP, "start mtqr\n\r");
   mtqrStart(&acs->mtqr); 
 	return STATUS_SUCCESS;
 }
@@ -222,7 +223,7 @@ static EXIT_STATUS fn_mtqr_start(ACS *acs)
 static EXIT_STATUS fn_mtqr_stop(ACS *acs)
 {
 	(void)acs;
-  chprintf(DEBUG_CHP, "stop bldc");
+  chprintf(DEBUG_CHP, "stop mtqr\n\r");
   mtqrStop(&acs->mtqr); 
 	return STATUS_SUCCESS;
 }
