@@ -62,35 +62,24 @@ typedef struct{
 /**
  * @brief Control structure used to configure the SPI driver
  *
- * GPIOA_SPI3_NSS is the pin used to initially select the SPI slave.
+ * GPIOA_SPI1_NSS is the pin used to initially select the SPI slave.
  * The mask for SPI Control Register 1 sets the frequency of data transfers
- * and sets the clock polarity.
- * The mask for SPI control Register 2 sets the size of the transfer buffer, 16 bits.
+ * sets the clock polarity, and enables data frame format.
+ * 
  *
  */
 static const SPIConfig spicfg;
-/*
+
+//*
 static const SPIConfig spicfg = {
 	false,             // circular buffer.
 	NULL,              // operation complete callback callback pointer
 	GPIOA,                                                // Chip select line.
-	GPIOA_SPI3_NSS,                                       // Chip select port.
-	SPI_CR1_BR_0|SPI_CR1_BR_1|SPI_CR1_BR_2|SPI_CR1_CPHA,  // SPI Ctrl Reg 1 mask.
-	SPI_CR2_DS_0|SPI_CR2_DS_1|SPI_CR2_DS_2|SPI_CR2_DS_3,  // SPI Ctrl Reg 2 mask.
+	GPIOA_SPI1_NSS,                                       // Chip select port.
+  SPI_CR1_DFF|SPI_CR1_BR_0|SPI_CR1_BR_1|SPI_CR1_BR_2|SPI_CR1_CPHA,
+	0
 };
 //*/
-
-/*
-static const SPIConfig spicfg = {
-	false,             // circular buffer.
-	NULL,              // operation complete callback callback pointer
-	GPIOA,                                                // Chip select line.
-	GPIOA_SPI3_NSS,                                       // Chip select port.
-  0,
-  0
-};
-//*/
-
 
 extern THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
 extern THD_FUNCTION(spiThread,arg);

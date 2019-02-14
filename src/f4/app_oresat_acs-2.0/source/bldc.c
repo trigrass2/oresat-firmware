@@ -50,44 +50,11 @@ static const ADCConversionGroup adcgrpcfg =
 };
 //*/
 
-/*
-static const SPIConfig spicfg = {
-	false,             // circular buffer.
-	NULL,              // operation complete callback callback pointer
-	GPIOA,                                                // Chip select line.
-	GPIOA_SPI3_NSS,                                       // Chip select port.
-	SPI_CR1_BR_0|SPI_CR1_BR_1|SPI_CR1_BR_2|SPI_CR1_CPHA,  // SPI Ctrl Reg 1 mask.
-	SPI_CR2_DS_0|SPI_CR2_DS_1|SPI_CR2_DS_2|SPI_CR2_DS_3,  // SPI Ctrl Reg 2 mask.
-};
-//*/
-
-/*
-static const SPIConfig spicfg = {
-	false,             // circular buffer.
-	NULL,              // operation complete callback callback pointer
-	GPIOA,                                                // Chip select line.
-	GPIOA_SPI3_NSS,                                       // Chip select port.
-	SPI_CR1_BR_1|SPI_CR1_BR_2,  // SPI Ctrl Reg 1 mask.
-	0
-};
-//*/
-
-//*
-static const SPIConfig spicfg = {
-	false,             // circular buffer.
-	NULL,              // operation complete callback callback pointer
-	GPIOA,                                                // Chip select line.
-	GPIOA_SPI3_NSS,                                       // Chip select port.
-	0,
-	0
-};
-//*/
-
 /**
  * @brief Handles the SPI transaction, getting the position from the encoder
  *
  */
-/*
+//*
 THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
 THD_FUNCTION(spiThread,arg)
 {
@@ -95,62 +62,30 @@ THD_FUNCTION(spiThread,arg)
   
   BLDCMotor *pMotor = (BLDCMotor *)arg;
 
-  spiStart(&SPID3,&spicfg);            	// Start driver.
-  spiAcquireBus(&SPID3);                // Gain ownership of bus.
+  spiStart(&SPID1,&spicfg);            	// Start driver.
+  spiAcquireBus(&SPID1);                // Gain ownership of bus.
 
   while(!chThdShouldTerminateX()) 
   {
-		pMotor->spiRxBuffer[0] = 0;
-		spiSelect(&SPID3);                  // Select slave.
+//		pMotor->spiRxBuffer[0] = 0;
+		spiSelect(&SPID1);                  // Select slave.
 
-		while(SPID3.state != SPI_READY) 
+		while(SPID1.state != SPI_READY) 
     { 
       // do nothing 
     }   
 		
-    spiReceive(&SPID3, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
-		spiUnselect(&SPID3);                // Unselect slave.
+    spiReceive(&SPID1, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
+		spiUnselect(&SPID1);                // Unselect slave.
 
 		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
-    //chprintf(DEBUG_CHP, "%u\n\r",pMotor->spiRxBuffer[0]);
     chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
   }
 
-	spiReleaseBus(&SPID3);    // Release ownership of bus.
-	spiStop(&SPID3);          // Stop driver.
+	spiReleaseBus(&SPID1);    // Release ownership of bus.
+	spiStop(&SPID1);          // Stop driver.
 }
 //*/
-#include "ccportab.h"
-CC_ALIGN(32) static uint8_t txbuf[512];
-CC_ALIGN(32) static uint8_t rxbuf[512];
-
-THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
-THD_FUNCTION(spiThread,arg)
-{
-  chRegSetThreadName("spiThread");
-  
-  BLDCMotor *pMotor = (BLDCMotor *)arg;
-
-//		pMotor->spiRxBuffer[0] = 0;
-  //spiReceive(&SPID3, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
-//		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
-  //  chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
-
-  while (true) {
-    spiAcquireBus(&SPID3);        /* Acquire ownership of the bus.    */
-    //palWriteLine(PORTAB_LINE_LED1, PORTAB_LED_ON);
-    spiStart(&SPID3,&spicfg); /* Setup transfer parameters.       */
-    spiSelect(&SPID3);            /* Slave Select assertion.          */
-    spiExchange(&SPID3, 512,
-                txbuf, rxbuf);          /* Atomic transfer operations.      */
-		pMotor->position = 0x3FFF & rxbuf[0];
-    chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
-    spiUnselect(&SPID3);          /* Slave Select de-assertion.       */
-    cacheBufferInvalidate(&txbuf[0],    /* Cache invalidation over the      */
-                          sizeof txbuf);/* buffer.                          */
-    spiReleaseBus(&SPID3);        /* Ownership release.               */
-  }  
-}
 
 /**
  * @brief Scales the duty ccycle value from LUT 0 - 100%
