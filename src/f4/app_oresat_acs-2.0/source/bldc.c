@@ -50,10 +50,44 @@ static const ADCConversionGroup adcgrpcfg =
 };
 //*/
 
+/*
+static const SPIConfig spicfg = {
+	false,             // circular buffer.
+	NULL,              // operation complete callback callback pointer
+	GPIOA,                                                // Chip select line.
+	GPIOA_SPI3_NSS,                                       // Chip select port.
+	SPI_CR1_BR_0|SPI_CR1_BR_1|SPI_CR1_BR_2|SPI_CR1_CPHA,  // SPI Ctrl Reg 1 mask.
+	SPI_CR2_DS_0|SPI_CR2_DS_1|SPI_CR2_DS_2|SPI_CR2_DS_3,  // SPI Ctrl Reg 2 mask.
+};
+//*/
+
+/*
+static const SPIConfig spicfg = {
+	false,             // circular buffer.
+	NULL,              // operation complete callback callback pointer
+	GPIOA,                                                // Chip select line.
+	GPIOA_SPI3_NSS,                                       // Chip select port.
+	SPI_CR1_BR_1|SPI_CR1_BR_2,  // SPI Ctrl Reg 1 mask.
+	0
+};
+//*/
+
+//*
+static const SPIConfig spicfg = {
+	false,             // circular buffer.
+	NULL,              // operation complete callback callback pointer
+	GPIOA,                                                // Chip select line.
+	GPIOA_SPI3_NSS,                                       // Chip select port.
+	0,
+	0
+};
+//*/
+
 /**
  * @brief Handles the SPI transaction, getting the position from the encoder
  *
  */
+/*
 THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
 THD_FUNCTION(spiThread,arg)
 {
@@ -61,27 +95,61 @@ THD_FUNCTION(spiThread,arg)
   
   BLDCMotor *pMotor = (BLDCMotor *)arg;
 
-  spiStart(&SPID1,&spicfg);            	// Start driver.
-  spiAcquireBus(&SPID1);                // Gain ownership of bus.
+  spiStart(&SPID3,&spicfg);            	// Start driver.
+  spiAcquireBus(&SPID3);                // Gain ownership of bus.
 
   while(!chThdShouldTerminateX()) 
   {
 		pMotor->spiRxBuffer[0] = 0;
-		spiSelect(&SPID1);                  // Select slave.
+		spiSelect(&SPID3);                  // Select slave.
 
-		while(SPID1.state != SPI_READY) 
+		while(SPID3.state != SPI_READY) 
     { 
       // do nothing 
     }   
 		
-    spiReceive(&SPID1, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
-		spiUnselect(&SPID1);                // Unselect slave.
+    spiReceive(&SPID3, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
+		spiUnselect(&SPID3);                // Unselect slave.
 
 		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
+    //chprintf(DEBUG_CHP, "%u\n\r",pMotor->spiRxBuffer[0]);
+    chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
   }
 
-	spiReleaseBus(&SPID1);    // Release ownership of bus.
-	spiStop(&SPID1);          // Stop driver.
+	spiReleaseBus(&SPID3);    // Release ownership of bus.
+	spiStop(&SPID3);          // Stop driver.
+}
+//*/
+#include "ccportab.h"
+CC_ALIGN(32) static uint8_t txbuf[512];
+CC_ALIGN(32) static uint8_t rxbuf[512];
+
+THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
+THD_FUNCTION(spiThread,arg)
+{
+  chRegSetThreadName("spiThread");
+  
+  BLDCMotor *pMotor = (BLDCMotor *)arg;
+
+//		pMotor->spiRxBuffer[0] = 0;
+  //spiReceive(&SPID3, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
+//		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
+  //  chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
+
+  while (true) {
+    spiAcquireBus(&SPID3);        /* Acquire ownership of the bus.    */
+    //palWriteLine(PORTAB_LINE_LED1, PORTAB_LED_ON);
+    spiStart(&SPID3,&spicfg); /* Setup transfer parameters.       */
+    spiSelect(&SPID3);            /* Slave Select assertion.          */
+    spiExchange(&SPID3, 512,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
+		pMotor->position = 0x3FFF & rxbuf[0];
+    chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
+    spiUnselect(&SPID3);          /* Slave Select de-assertion.       */
+    cacheBufferInvalidate(&txbuf[0],    /* Cache invalidation over the      */
+                          sizeof txbuf);/* buffer.                          */
+    spiReleaseBus(&SPID3);        /* Ownership release.               */
+  }  
 }
 
 /**
@@ -99,10 +167,21 @@ static dutycycle_t scale(dutycycle_t duty_cycle)
  * @brief Periodic callback of the PWM driver
  *
  */
+
+static int count = 0;
+
 static void pwmPeriodCallback(PWMDriver *pwmp) 
 {
   (void)pwmp;
   // TODO: WOW! This is boring now...
+  if(count == 100)
+  {
+    count = 0;
+  }
+  else
+  {
+    ++count;
+  }
 }
 
 /**
@@ -148,11 +227,8 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->isOpenLoop = true;
   pMotor->isStarted = false;
 	
-	//adcStart(&ADCD1, NULL); 
-  //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
-
-/*
-	pMotor->p_spi_thread=chThdCreateStatic(
+  //*
+	pMotor->pSpiThread=chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
 		NORMALPRIO,
@@ -160,6 +236,10 @@ extern void bldcInit(BLDCMotor *pMotor)
 		pMotor
 	);
 //*/
+
+	//adcStart(&ADCD1, NULL); 
+  //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
+
 
 }
 
@@ -173,6 +253,17 @@ extern void bldcStart(BLDCMotor *pMotor)
   {
 		return; 
 	}
+
+/*
+	pMotor->pSpiThread=chThdCreateStatic(
+		wa_spiThread,
+		sizeof(wa_spiThread),
+		NORMALPRIO,
+		spiThread,
+		pMotor
+	);
+//*/
+
 	pwmStart(&PWMD1,&pwmRwConfig);
   pwmEnablePeriodicNotification(&PWMD1);
 	
@@ -202,6 +293,7 @@ extern void bldcStop(BLDCMotor *pMotor)
   pwmDisableChannel(&PWMD1,PWM_W);
   pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
+//  chThdTerminate(pMotor->pSpiThread);
 	pMotor->isStarted = FALSE;
 }
 
@@ -228,8 +320,8 @@ extern void bldcExit(BLDCMotor *pMotor)
   {
 		bldcStop(pMotor);
 	}
-  adcStopConversion(&ADCD1);
-  adcStop(&ADCD1); 
+  //adcStopConversion(&ADCD1);
+  //adcStop(&ADCD1); 
 	chThdTerminate(pMotor->pSpiThread);
 	chThdWait(pMotor->pSpiThread);
 }
