@@ -47,8 +47,9 @@ typedef struct{
   sin_t const *pSinLut; /// pointer to the sin lut
   uint16_t periodCount;       /// period counter
   uint16_t position;
-	
-  bool isOpenLoop; // gross
+  int motorConst; /// motor characteristic constant
+  int calOffset;  /// calibration offset
+ 	
   bool isStarted;
 
   // ADC conversion storage array
@@ -74,8 +75,8 @@ static const SPIConfig spicfg;
 static const SPIConfig spicfg = {
 	false,             // circular buffer.
 	NULL,              // operation complete callback callback pointer
-	GPIOA,                                                // Chip select line.
-	GPIOA_SPI1_NSS,                                       // Chip select port.
+	GPIOA,             // Chip select line.
+	GPIOA_SPI1_NSS,    // Chip select port.
   SPI_CR1_DFF|SPI_CR1_BR_0|SPI_CR1_BR_1|SPI_CR1_BR_2|SPI_CR1_CPHA,
 	0
 };

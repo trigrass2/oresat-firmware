@@ -50,6 +50,13 @@ static const ADCConversionGroup adcgrpcfg =
 };
 //*/
 
+
+
+float normalizePosition(uint16_t encoderValue)
+{
+  return encoderValue / ((1<<14)-1);
+}
+
 /**
  * @brief Handles the SPI transaction, getting the position from the encoder
  *
@@ -159,10 +166,9 @@ extern void bldcInit(BLDCMotor *pMotor)
  // pMotor->u = 0;
  // pMotor->v = pMotor->u + pMotor->phaseShift;
  // pMotor->w = pMotor->v + pMotor->phaseShift;
-  pMotor->isOpenLoop = true;
   pMotor->isStarted = false;
 	
-  //*
+  /*
 	pMotor->pSpiThread=chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
@@ -189,7 +195,7 @@ extern void bldcStart(BLDCMotor *pMotor)
 		return; 
 	}
 
-/*
+//*
 	pMotor->pSpiThread=chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
@@ -228,7 +234,7 @@ extern void bldcStop(BLDCMotor *pMotor)
   pwmDisableChannel(&PWMD1,PWM_W);
   pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
-//  chThdTerminate(pMotor->pSpiThread);
+  chThdTerminate(pMotor->pSpiThread);
 	pMotor->isStarted = FALSE;
 }
 
