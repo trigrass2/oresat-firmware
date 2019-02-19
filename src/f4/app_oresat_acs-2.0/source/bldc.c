@@ -1,6 +1,9 @@
 #include "bldc.h"
 #include "acs_common.h"
 
+BLDCMotor *gpMotor = NULL;
+static int count = 0;
+
 /**
  * @brief Currently not used.
  *
@@ -50,11 +53,10 @@ static const ADCConversionGroup adcgrpcfg =
 };
 //*/
 
-
-
 float normalizePosition(uint16_t encoderValue)
 {
-  return encoderValue / ((1<<14)-1);
+  float encoderFloatValue = encoderValue;
+  return (encoderFloatValue / ((1<<14)-1));
 }
 
 /**
@@ -71,7 +73,6 @@ THD_FUNCTION(spiThread,arg)
 
   spiStart(&SPID1,&spicfg);            	// Start driver.
   spiAcquireBus(&SPID1);                // Gain ownership of bus.
-
   while(!chThdShouldTerminateX()) 
   {
 //		pMotor->spiRxBuffer[0] = 0;
@@ -86,7 +87,8 @@ THD_FUNCTION(spiThread,arg)
 		spiUnselect(&SPID1);                // Unselect slave.
 
 		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
-    chprintf(DEBUG_CHP, "%u\n\r",pMotor->position);
+    float normalPosition = normalizePosition(pMotor->position);
+    chprintf(DEBUG_CHP, "%f\n\r",normalPosition);
   }
 
 	spiReleaseBus(&SPID1);    // Release ownership of bus.
@@ -110,20 +112,24 @@ static dutycycle_t scale(dutycycle_t duty_cycle)
  *
  */
 
-static int count = 0;
 
 static void pwmPeriodCallback(PWMDriver *pwmp) 
 {
   (void)pwmp;
   // TODO: WOW! This is boring now...
-  if(count == 100)
+/*
+  if(count == 1000)
   {
     count = 0;
+    //chprintf(DEBUG_CHP, "%f\n\r",gpMotor->position);
+    //chprintf(DEBUG_CHP, "%d\n\r",count);
+    //chprintf(DEBUG_CHP, "Hi\n\r");
   }
   else
   {
     ++count;
   }
+  //*/
 }
 
 /**
@@ -160,6 +166,7 @@ static PWMConfig pwmRwConfig =
  */
 extern void bldcInit(BLDCMotor *pMotor)
 {
+  gpMotor = pMotor;
   pMotor->pSinLut = sin_lut;
   pMotor->periodCount = 0;
   pMotor->position = 0;

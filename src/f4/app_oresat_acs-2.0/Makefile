@@ -5,7 +5,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -Og -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -Og -ggdb -fomit-frame-pointer -falign-functions=16 -lm
 endif
 
 # C specific options here (added to USE_OPT).
@@ -71,7 +71,9 @@ endif
 
 # Enables the use of FPU (no, softfp, hard).
 ifeq ($(USE_FPU),)
-  USE_FPU = no
+#  USE_FPU = no
+  USE_FPU = hard 
+#  USE_FPU = soft
 endif
 
 #
@@ -176,7 +178,7 @@ INCDIR = $(ALLINC) $(TESTINC) $(CONFDIR)
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS =
+UDEFS = -DCHPRINTF_USE_FLOAT=TRUE #-DUSE_FPU=TRUE
 
 # Define ASM defines here
 UADEFS =
@@ -188,7 +190,7 @@ UINCDIR = $(PROJ_INC)
 ULIBDIR = $(PROJ_SRC)
 
 # List all user libraries here
-ULIBS =
+ULIBS = -lm
 
 #
 # End of user section

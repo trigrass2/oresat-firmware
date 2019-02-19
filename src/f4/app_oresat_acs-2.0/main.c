@@ -79,6 +79,9 @@ static void app_init(void)
 
   dbgSerialOut("Serial driver started...\n\r", 0, 300);
   chprintf(DEBUG_CHP, "Serial test...\n\r");
+  float test = 11.2;
+  chprintf(DEBUG_CHP, "%d\n\r",(int)(test * 10));
+  chprintf(DEBUG_CHP, "%f\n\r",test);
 }
 
 /**
