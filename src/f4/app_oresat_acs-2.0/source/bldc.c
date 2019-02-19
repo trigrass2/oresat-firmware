@@ -2,7 +2,6 @@
 #include "acs_common.h"
 
 BLDCMotor *gpMotor = NULL;
-static int count = 0;
 
 /**
  * @brief Currently not used.
@@ -70,7 +69,7 @@ THD_FUNCTION(spiThread,arg)
   chRegSetThreadName("spiThread");
   
   BLDCMotor *pMotor = (BLDCMotor *)arg;
-
+  uint16_t position = 0;
   spiStart(&SPID1,&spicfg);            	// Start driver.
   spiAcquireBus(&SPID1);                // Gain ownership of bus.
   while(!chThdShouldTerminateX()) 
@@ -86,9 +85,12 @@ THD_FUNCTION(spiThread,arg)
     spiReceive(&SPID1, 1, pMotor->spiRxBuffer); // Receive 1 frame (16 bits).
 		spiUnselect(&SPID1);                // Unselect slave.
 
-		pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
-    float normalPosition = normalizePosition(pMotor->position);
-    chprintf(DEBUG_CHP, "%f\n\r",normalPosition);
+		//pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
+		position = 0x3FFF & pMotor->spiRxBuffer[0];
+    chSysLock();  
+    pMotor->normalPosition = normalizePosition(position);
+    chSysUnlock();  
+    //chprintf(DEBUG_CHP, "%f\n\r",normalPosition);
   }
 
 	spiReleaseBus(&SPID1);    // Release ownership of bus.
@@ -107,23 +109,63 @@ static dutycycle_t scale(dutycycle_t duty_cycle)
 }
 //*/
 
+static int electricMotorAngle(float normalPosition)
+{
+  return (normalPosition * gpMotor->motorConst + gpMotor->calOffset);// % 1; 
+}
+
+static int lookupPosition(int motorAngle, int phase)
+{
+  if(phase == 0)
+  {
+    return motorAngle + kLUTSize;
+  }
+  else 
+  {
+    return motorAngle + kLUTSize / phase;
+  }
+}
+
+void commutateMotor(float normalPosition)
+{
+  int motorAngle;
+  int indexU;
+  int indexV;
+  int indexW;
+  float sinValU;
+  float sinValV;
+  float sinValW;
+
+  motorAngle = electricMotorAngle(normalPosition);
+  indexU = lookupPosition(motorAngle, 0);
+  indexV = lookupPosition(motorAngle, 3);
+  indexW = lookupPosition(motorAngle, -3);
+  sinValU = sin_lut[indexU];
+  sinValV = sin_lut[indexV];
+  sinValW = sin_lut[indexW];
+  bldcSetDutyCycle(PWM_U, sinValU * gpMotor->magnitude);
+	bldcSetDutyCycle(PWM_V, sinValV * gpMotor->magnitude);
+	bldcSetDutyCycle(PWM_W, sinValW * gpMotor->magnitude);
+}
+
 /**
  * @brief Periodic callback of the PWM driver
- *
+ * @brief count is used for sampling
  */
-
+static int count = 0;
 
 static void pwmPeriodCallback(PWMDriver *pwmp) 
 {
   (void)pwmp;
-  // TODO: WOW! This is boring now...
-/*
-  if(count == 1000)
+//*
+  float normalPosition; 
+  if(count == 100) // for sampling
   {
+    chSysLock();
+    normalPosition = gpMotor->normalPosition;
+    chSysUnlock();  
+    commutateMotor(normalPosition);
     count = 0;
-    //chprintf(DEBUG_CHP, "%f\n\r",gpMotor->position);
-    //chprintf(DEBUG_CHP, "%d\n\r",count);
-    //chprintf(DEBUG_CHP, "Hi\n\r");
   }
   else
   {
@@ -170,6 +212,10 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->pSinLut = sin_lut;
   pMotor->periodCount = 0;
   pMotor->position = 0;
+  pMotor->normalPosition = 0.0;
+  pMotor->motorConst = 1; /// motor characteristic constant
+  pMotor->calOffset = 0;  /// calibration offset
+  pMotor->magnitude = 1.0;  /// calibration offset
  // pMotor->u = 0;
  // pMotor->v = pMotor->u + pMotor->phaseShift;
  // pMotor->w = pMotor->v + pMotor->phaseShift;
@@ -218,7 +264,7 @@ extern void bldcStart(BLDCMotor *pMotor)
 	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->u));
   pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->v));
   pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->w));
-//*
+/*
   bldcSetDutyCycle(PWM_U,5000);
 	bldcSetDutyCycle(PWM_V,5000);
 	bldcSetDutyCycle(PWM_W,5000);

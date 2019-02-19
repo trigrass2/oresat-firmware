@@ -13,7 +13,7 @@
 /**
  *
  */
-#define STEPS			LUT_SIZE 
+//#define STEPS			LUT_SIZE 
 #define SKIP      1
 
 #define PWM_TIMER_FREQ	1e6  /// Hz
@@ -47,8 +47,10 @@ typedef struct{
   sin_t const *pSinLut; /// pointer to the sin lut
   uint16_t periodCount;       /// period counter
   uint16_t position;
+  float normalPosition;
   int motorConst; /// motor characteristic constant
   int calOffset;  /// calibration offset
+  float magnitude;  /// calibration offset
  	
   bool isStarted;
 
