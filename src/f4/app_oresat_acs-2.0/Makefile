@@ -235,6 +235,6 @@ CPPWARN = -Wall -Wextra -Wundef
 # Compiler settings
 ##############################################################################
 
-RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
+RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk
 include $(RULESPATH)/rules.mk
 include $(TOOLCHAIN)/toolchain.mk
