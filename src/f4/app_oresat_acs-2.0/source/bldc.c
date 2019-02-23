@@ -1,5 +1,6 @@
 #include "bldc.h"
 #include "acs_common.h"
+#include "math.h"
 
 BLDCMotor *gpMotor = NULL;
 
@@ -55,7 +56,7 @@ static const ADCConversionGroup adcgrpcfg =
 float normalizePosition(uint16_t encoderValue)
 {
   float encoderFloatValue = encoderValue;
-  return (encoderFloatValue / ((1<<14)-1));
+  return (encoderFloatValue / (1<<14));
 }
 
 /**
@@ -87,10 +88,12 @@ THD_FUNCTION(spiThread,arg)
 
 		//pMotor->position = 0x3FFF & pMotor->spiRxBuffer[0];
 		position = 0x3FFF & pMotor->spiRxBuffer[0];
+    /// ******critical section***********
     chSysLock();  
     pMotor->normalPosition = normalizePosition(position);
     chSysUnlock();  
-    //chprintf(DEBUG_CHP, "%f\n\r",normalPosition);
+    /// ******end critical section***********
+    //chprintf(DEBUG_CHP, "%f\n\r",pMotor->normalPosition);
   }
 
 	spiReleaseBus(&SPID1);    // Release ownership of bus.
@@ -109,43 +112,68 @@ static dutycycle_t scale(dutycycle_t duty_cycle)
 }
 //*/
 
-static int electricMotorAngle(float normalPosition)
+static float electricMotorAngle(float normalPosition)
 {
-  return (normalPosition * gpMotor->motorConst + gpMotor->calOffset);// % 1; 
+  //float x = (normalPosition * gpMotor->motorConst + gpMotor->calOffset);
+  //return x - floor(x); 
+  return (normalPosition * gpMotor->motorConst + gpMotor->calOffset);
 }
 
-static int lookupPosition(int motorAngle, int phase)
+static int lookupPosition(float motorAngle, int phase)
 {
+  float x;
+  static const float k_onethird = 1.0 / 3;
   if(phase == 0)
   {
-    return motorAngle + kLUTSize;
+    x = motorAngle;
   }
-  else 
+  else if (phase == 1)
   {
-    return motorAngle + kLUTSize / phase;
+    x = motorAngle + k_onethird; 
   }
+  else if (phase == 2)
+  {
+    x = motorAngle - k_onethird;
+  }
+
+  return (x - floor(x)) * kLUTSize;
 }
 
 void commutateMotor(float normalPosition)
 {
-  int motorAngle;
+  float motorAngle;
   int indexU;
   int indexV;
   int indexW;
   float sinValU;
   float sinValV;
   float sinValW;
+  uint16_t input;
 
   motorAngle = electricMotorAngle(normalPosition);
   indexU = lookupPosition(motorAngle, 0);
-  indexV = lookupPosition(motorAngle, 3);
-  indexW = lookupPosition(motorAngle, -3);
+  indexV = lookupPosition(motorAngle, 1);
+  indexW = lookupPosition(motorAngle, 2);
+  //chprintf(DEBUG_CHP, "%d\n\r",indexU);
+  //chThdSleepMilliseconds(100);
   sinValU = sin_lut[indexU];
   sinValV = sin_lut[indexV];
   sinValW = sin_lut[indexW];
-  bldcSetDutyCycle(PWM_U, sinValU * gpMotor->magnitude);
-	bldcSetDutyCycle(PWM_V, sinValV * gpMotor->magnitude);
-	bldcSetDutyCycle(PWM_W, sinValW * gpMotor->magnitude);
+  //*
+  input = sinValU * gpMotor->magnitude * 5000 + 5000;
+  bldcSetDutyCycle(PWM_U, input);
+  input = sinValV * gpMotor->magnitude * 5000 + 5000;
+	bldcSetDutyCycle(PWM_V, input);
+  input = sinValW * gpMotor->magnitude * 5000 + 5000;
+	bldcSetDutyCycle(PWM_W, input);
+  //*/
+  //bldcSetDutyCycle(PWM_U,4000);
+	//bldcSetDutyCycle(PWM_V,5000);
+	//bldcSetDutyCycle(PWM_V,6000);
+  //bldcSetDutyCycle(PWM_U,sinValW * 5000 + 5000);
+  //bldcSetDutyCycle(PWM_U,sinValU * 5000 + 5000);
+  //bldcSetDutyCycle(PWM_U,sinValW * 5000 + 5000);
+	//bldcSetDutyCycle(PWM_W,normalPosition*10000);
 }
 
 /**
@@ -159,18 +187,20 @@ static void pwmPeriodCallback(PWMDriver *pwmp)
   (void)pwmp;
 //*
   float normalPosition; 
-  if(count == 100) // for sampling
-  {
-    chSysLock();
+//  if(count == 200) // for sampling
+//  {
+    /// ******critical section***********
+    //chSysLock();
     normalPosition = gpMotor->normalPosition;
-    chSysUnlock();  
+    //chSysUnlock();  
+    /// ******end critical section***********
     commutateMotor(normalPosition);
-    count = 0;
-  }
-  else
-  {
-    ++count;
-  }
+//    count = 0;
+ // }
+ // else
+ // {
+ //   ++count;
+ // }
   //*/
 }
 
@@ -213,9 +243,9 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->periodCount = 0;
   pMotor->position = 0;
   pMotor->normalPosition = 0.0;
-  pMotor->motorConst = 1; /// motor characteristic constant
+  pMotor->motorConst = 6; /// motor characteristic constant
   pMotor->calOffset = 0;  /// calibration offset
-  pMotor->magnitude = 1.0;  /// calibration offset
+  pMotor->magnitude = 0.25;  /// calibration offset
  // pMotor->u = 0;
  // pMotor->v = pMotor->u + pMotor->phaseShift;
  // pMotor->w = pMotor->v + pMotor->phaseShift;

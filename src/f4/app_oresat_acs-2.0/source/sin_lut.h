@@ -9,6 +9,6 @@ static const int kLUTSize = LUT_SIZE;
 
 typedef float sin_t;
 
-static const sin_t sin_lut[LUT_SIZE];
+extern const sin_t sin_lut[LUT_SIZE];
 
 #endif
