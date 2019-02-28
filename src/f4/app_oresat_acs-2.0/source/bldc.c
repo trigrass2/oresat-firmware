@@ -1,6 +1,7 @@
 #include "bldc.h"
 #include "acs_common.h"
 #include "math.h"
+//#include "osal.h"
 
 BLDCMotor *gpMotor = NULL;
 
@@ -176,6 +177,8 @@ void commutateMotor(float normalPosition)
 	//bldcSetDutyCycle(PWM_W,normalPosition*10000);
 }
 
+binary_semaphore_t bldc_bsem;
+
 /**
  * @brief Periodic callback of the PWM driver
  * @brief count is used for sampling
@@ -186,15 +189,27 @@ static void pwmPeriodCallback(PWMDriver *pwmp)
 {
   (void)pwmp;
 //*
-  float normalPosition; 
+  //float normalPosition; 
 //  if(count == 200) // for sampling
 //  {
     /// ******critical section***********
     //chSysLock();
-    normalPosition = gpMotor->normalPosition;
+   // normalPosition = gpMotor->normalPosition;
+
+
+   //if ((UART->SR & UART_SR_DATA_AVAILABLE) != 0) {
+ 
+    /* Entering I-Locked state and signaling the semaphore.*/
+    chSysLockFromISR();
+    chBSemSignalI(&bldc_bsem);
+    chSysUnlockFromISR();
+ 
+    /* Resetting interrupt source.*/
+    //UART->SR &= ~UART_SR_DATA_AVAILABLE;
+  //} 
     //chSysUnlock();  
     /// ******end critical section***********
-    commutateMotor(normalPosition);
+ //   commutateMotor(normalPosition);
 //    count = 0;
  // }
  // else
@@ -202,6 +217,40 @@ static void pwmPeriodCallback(PWMDriver *pwmp)
  //   ++count;
  // }
   //*/
+}
+
+THD_WORKING_AREA(wa_commutationThread,THREAD_SIZE);
+THD_FUNCTION(commutationThread,arg)
+{
+  chRegSetThreadName("commutationThread");
+ (void)arg; 
+  //BLDCMotor *pMotor = (BLDCMotor *)arg;
+  
+ // while(!chThdShouldTerminateX()) 
+  while (true) 
+  {
+  /* Waiting for an interrupt. If the interrupt has already occurred
+     then the thread will not stop into chBSemWaitTimeout() because
+     the binary semaphore would be in the "not taken" state.
+     A 500mS timeout is programmed.*/
+    msg_t msg = chBSemWaitTimeout(&bldc_bsem, MS2ST(500));
+
+    /* If a communication timeout occurred then some special handling
+       is required.*/
+    if (msg == MSG_TIMEOUT) {
+      handle_comm_timeout();
+      continue;
+    }
+
+    /* Empties the UART RX FIFO and processes all data before attempting
+       taking the semaphore again.*/
+    //while ((UART->SR & UART_SR_RXFIFO_CNT) > 0) {
+    //   process_data(UART->DR);
+    //}
+  
+    commutateMotor(gpMotor->normalPosition);
+  }
+
 }
 
 /**
