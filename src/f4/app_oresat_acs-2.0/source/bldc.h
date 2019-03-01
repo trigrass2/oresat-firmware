@@ -40,10 +40,6 @@ typedef uint16_t dutycycle_t;
  * a motor and how it's being control
  */
 typedef struct{
-	sin_t u;              /// PWM signal
-	sin_t v;              /// PWM signal
-	sin_t w;              /// PWM signal
-	
   sin_t const *pSinLut; /// pointer to the sin lut
   uint16_t periodCount;       /// period counter
   uint16_t position;
@@ -60,6 +56,7 @@ typedef struct{
   // spy things	
   uint16_t spiRxBuffer[SPI_BUF_SIZE]; // receive buffer
 	thread_t *pSpiThread;
+	thread_t *pCommutationThread;
 } BLDCMotor;
 
 /**
@@ -86,6 +83,9 @@ static const SPIConfig spicfg = {
 
 extern THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
 extern THD_FUNCTION(spiThread,arg);
+
+extern THD_WORKING_AREA(waCommutationThread,THREAD_SIZE);
+extern THD_FUNCTION(commutationThread,arg);
 
 extern void bldcInit(BLDCMotor *pMotor);
 extern void bldcStart(BLDCMotor *pMotor);

@@ -101,21 +101,8 @@ THD_FUNCTION(spiThread,arg)
 }
 //*/
 
-/**
- * @brief Scales the duty ccycle value from LUT 0 - 100%
- *
- */
-/*
-static dutycycle_t scale(dutycycle_t duty_cycle)
-{
-	return ((duty_cycle*pMotor->scale)/100) + ((10000*(pMotor->scale/2))/100);	
-}
-//*/
-
 static float electricMotorAngle(float normalPosition)
 {
-  //float x = (normalPosition * gpMotor->motorConst + gpMotor->calOffset);
-  //return x - floor(x); 
   return (normalPosition * gpMotor->motorConst + gpMotor->calOffset);
 }
 
@@ -167,41 +154,56 @@ void commutateMotor(float normalPosition)
   input = sinValW * gpMotor->magnitude * 5000 + 5000;
 	bldcSetDutyCycle(PWM_W, input);
   //*/
-  //bldcSetDutyCycle(PWM_U,4000);
-	//bldcSetDutyCycle(PWM_V,5000);
-	//bldcSetDutyCycle(PWM_V,6000);
-  //bldcSetDutyCycle(PWM_U,sinValW * 5000 + 5000);
-  //bldcSetDutyCycle(PWM_U,sinValU * 5000 + 5000);
-  //bldcSetDutyCycle(PWM_U,sinValW * 5000 + 5000);
-	//bldcSetDutyCycle(PWM_W,normalPosition*10000);
 }
 
-/**
- * @brief Periodic callback of the PWM driver
- * @brief count is used for sampling
- */
-static int count = 0;
+binary_semaphore_t bldc_bsem;
+
+
+static void handleCommunicationTimeout(void)
+{
+  chprintf(DEBUG_CHP, "timeout\n\r");
+}
+
+THD_WORKING_AREA(waCommutationThread,THREAD_SIZE);
+THD_FUNCTION(commutationThread,arg)
+{
+  (void)arg;
+  chRegSetThreadName("commutationThread");
+  
+  //BLDCMotor *pMotor = (BLDCMotor *)arg;
+  
+  while(!chThdShouldTerminateX()) 
+  {
+   /* 
+    * Waiting for an interrupt. If the interrupt has already occurred 
+    * then the thread will not stop into chBSemWaitTimeout() because
+    * the binary semaphore would be in the "not taken" state. 
+    * A 500mS timeout is programmed.
+    */
+    msg_t msg = chBSemWaitTimeout(&bldc_bsem, TIME_MS2I(500));
+
+    /* 
+     * If a communication timeout occurred then some special handling
+     * is required.
+     */
+    if(msg == MSG_TIMEOUT) 
+    {
+      handleCommunicationTimeout();
+      continue;
+    }
+
+    commutateMotor(gpMotor->normalPosition);
+    //chprintf(DEBUG_CHP, "%f\n\r",pMotor->normalPosition);
+  }
+}
 
 static void pwmPeriodCallback(PWMDriver *pwmp) 
 {
   (void)pwmp;
-//*
-  float normalPosition; 
-//  if(count == 200) // for sampling
-//  {
-    /// ******critical section***********
-    //chSysLock();
-    normalPosition = gpMotor->normalPosition;
-    //chSysUnlock();  
-    /// ******end critical section***********
-    commutateMotor(normalPosition);
-//    count = 0;
- // }
- // else
- // {
- //   ++count;
- // }
-  //*/
+
+  chSysLockFromISR();
+  chBSemSignalI(&bldc_bsem);
+  chSysUnlockFromISR();
 }
 
 /**
@@ -246,25 +248,11 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->motorConst = 6; /// motor characteristic constant
   pMotor->calOffset = 0;  /// calibration offset
   pMotor->magnitude = 0.25;  /// calibration offset
- // pMotor->u = 0;
- // pMotor->v = pMotor->u + pMotor->phaseShift;
- // pMotor->w = pMotor->v + pMotor->phaseShift;
   pMotor->isStarted = false;
-	
-  /*
-	pMotor->pSpiThread=chThdCreateStatic(
-		wa_spiThread,
-		sizeof(wa_spiThread),
-		NORMALPRIO,
-		spiThread,
-		pMotor
-	);
-//*/
+  chBSemObjectInit(&bldc_bsem, true);	
 
 	//adcStart(&ADCD1, NULL); 
   //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
-
-
 }
 
 /**
@@ -279,7 +267,7 @@ extern void bldcStart(BLDCMotor *pMotor)
 	}
 
 //*
-	pMotor->pSpiThread=chThdCreateStatic(
+	pMotor->pSpiThread = chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
 		NORMALPRIO,
@@ -288,17 +276,23 @@ extern void bldcStart(BLDCMotor *pMotor)
 	);
 //*/
 
+//*
+	pMotor->pCommutationThread = chThdCreateStatic(
+		waCommutationThread,
+		sizeof(waCommutationThread),
+		NORMALPRIO + 1,
+		commutationThread,
+		pMotor
+	);
+//*/
+
 	pwmStart(&PWMD1,&pwmRwConfig);
   pwmEnablePeriodicNotification(&PWMD1);
 	
-	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->u));
-  pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->v));
-  pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,pMotor->w));
-/*
-  bldcSetDutyCycle(PWM_U,5000);
-	bldcSetDutyCycle(PWM_V,5000);
-	bldcSetDutyCycle(PWM_W,5000);
-//*/  
+	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,0));
+  pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,0));
+  pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,0));
+  
   pMotor->isStarted = TRUE;
 }
 
@@ -318,6 +312,7 @@ extern void bldcStop(BLDCMotor *pMotor)
   pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
   chThdTerminate(pMotor->pSpiThread);
+  chThdTerminate(pMotor->pCommutationThread);
 	pMotor->isStarted = FALSE;
 }
 
