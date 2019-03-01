@@ -60,6 +60,7 @@ typedef struct{
   // spy things	
   uint16_t spiRxBuffer[SPI_BUF_SIZE]; // receive buffer
 	thread_t *pSpiThread;
+	thread_t *pCommutationThread;
 } BLDCMotor;
 
 /**
@@ -68,8 +69,6 @@ typedef struct{
  * GPIOA_SPI1_NSS is the pin used to initially select the SPI slave.
  * The mask for SPI Control Register 1 sets the frequency of data transfers
  * sets the clock polarity, and enables data frame format.
- * 
- *
  */
 static const SPIConfig spicfg;
 
@@ -86,6 +85,9 @@ static const SPIConfig spicfg = {
 
 extern THD_WORKING_AREA(wa_spiThread,THREAD_SIZE);
 extern THD_FUNCTION(spiThread,arg);
+
+extern THD_WORKING_AREA(wa_commutationThread,THREAD_SIZE);
+extern THD_FUNCTION(commutationThread,arg);
 
 extern void bldcInit(BLDCMotor *pMotor);
 extern void bldcStart(BLDCMotor *pMotor);

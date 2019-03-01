@@ -189,27 +189,29 @@ static void pwmPeriodCallback(PWMDriver *pwmp)
 {
   (void)pwmp;
 //*
-  //float normalPosition; 
+  float normalPosition; 
 //  if(count == 200) // for sampling
 //  {
     /// ******critical section***********
     //chSysLock();
-   // normalPosition = gpMotor->normalPosition;
+    normalPosition = gpMotor->normalPosition;
 
 
    //if ((UART->SR & UART_SR_DATA_AVAILABLE) != 0) {
  
     /* Entering I-Locked state and signaling the semaphore.*/
+  /*
     chSysLockFromISR();
     chBSemSignalI(&bldc_bsem);
     chSysUnlockFromISR();
+  //*/
  
     /* Resetting interrupt source.*/
     //UART->SR &= ~UART_SR_DATA_AVAILABLE;
   //} 
     //chSysUnlock();  
     /// ******end critical section***********
- //   commutateMotor(normalPosition);
+   commutateMotor(normalPosition);
 //    count = 0;
  // }
  // else
@@ -219,7 +221,13 @@ static void pwmPeriodCallback(PWMDriver *pwmp)
   //*/
 }
 
-THD_WORKING_AREA(wa_commutationThread,THREAD_SIZE);
+
+static void handle_comm_timeout(void)
+{
+  chprintf(DEBUG_CHP, "timeout!\n\r");
+}
+
+THD_WORKING_AREA(waCommutationThread,THREAD_SIZE);
 THD_FUNCTION(commutationThread,arg)
 {
   chRegSetThreadName("commutationThread");
@@ -233,7 +241,8 @@ THD_FUNCTION(commutationThread,arg)
      then the thread will not stop into chBSemWaitTimeout() because
      the binary semaphore would be in the "not taken" state.
      A 500mS timeout is programmed.*/
-    msg_t msg = chBSemWaitTimeout(&bldc_bsem, MS2ST(500));
+    //msg_t msg = chBSemWaitTimeout(&bldc_bsem, MS2ST(500));
+    msg_t msg = chBSemWaitTimeout(&bldc_bsem, TIME_MS2I(500));
 
     /* If a communication timeout occurred then some special handling
        is required.*/
@@ -328,13 +337,22 @@ extern void bldcStart(BLDCMotor *pMotor)
 	}
 
 //*
-	pMotor->pSpiThread=chThdCreateStatic(
+	pMotor->pSpiThread = chThdCreateStatic(
 		wa_spiThread,
 		sizeof(wa_spiThread),
 		NORMALPRIO,
 		spiThread,
 		pMotor
 	);
+//*/
+/*
+  pMotor->pCommutationThread = chThdCreateStatic(
+    waCommutationThread, 
+    sizeof(waCommutationThread),
+    NORMALPRIO + 1, 
+    commutationThread, 
+    NULL
+  );
 //*/
 
 	pwmStart(&PWMD1,&pwmRwConfig);
@@ -367,6 +385,7 @@ extern void bldcStop(BLDCMotor *pMotor)
   pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
   chThdTerminate(pMotor->pSpiThread);
+//  chThdTerminate(pMotor->pCommutationThread);
 	pMotor->isStarted = FALSE;
 }
 
