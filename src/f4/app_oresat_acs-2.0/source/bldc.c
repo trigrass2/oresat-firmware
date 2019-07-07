@@ -138,6 +138,9 @@ void commutateMotor(float normalPosition)
   uint16_t input;
 
   motorAngle = electricMotorAngle(normalPosition);
+ // motorAngle = 0;
+//  gpMotor->magnitude = 1.0;
+
   indexU = lookupPosition(motorAngle, 0);
   indexV = lookupPosition(motorAngle, 1);
   indexW = lookupPosition(motorAngle, 2);
@@ -153,11 +156,11 @@ void commutateMotor(float normalPosition)
 	bldcSetDutyCycle(PWM_V, input);
   input = sinValW * gpMotor->magnitude * 5000 + 5000;
 	bldcSetDutyCycle(PWM_W, input);
+  //chprintf(DEBUG_CHP, "%f\n\r",gpMotor->normalPosition);
   //*/
 }
 
 binary_semaphore_t bldc_bsem;
-
 
 static void handleCommunicationTimeout(void)
 {
@@ -180,17 +183,21 @@ THD_FUNCTION(commutationThread,arg)
     * the binary semaphore would be in the "not taken" state. 
     * A 500mS timeout is programmed.
     */
-    msg_t msg = chBSemWaitTimeout(&bldc_bsem, TIME_MS2I(500));
 
     /* 
      * If a communication timeout occurred then some special handling
      * is required.
      */
+    chBSemWait(&bldc_bsem);
+    /*
+    msg_t msg = chBSemWaitTimeout(&bldc_bsem, TIME_MS2I(500));
+    
     if(msg == MSG_TIMEOUT) 
     {
       handleCommunicationTimeout();
       continue;
     }
+    //*/
 
     commutateMotor(gpMotor->normalPosition);
     //chprintf(DEBUG_CHP, "%f\n\r",pMotor->normalPosition);
@@ -246,11 +253,12 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->position = 0;
   pMotor->normalPosition = 0.0;
   pMotor->motorConst = 6; /// motor characteristic constant
-  pMotor->calOffset = 0;  /// calibration offset
-  pMotor->magnitude = 0.25;  /// calibration offset
+  //pMotor->calOffset = 0;  /// calibration offset
+  pMotor->calOffset = 0.25 - 0.145;  /// calibration offset
+  pMotor->magnitude = 0.30;  /// calibration offset
   pMotor->isStarted = false;
-  chBSemObjectInit(&bldc_bsem, true);	
 
+  chBSemObjectInit(&bldc_bsem, true);	
 	//adcStart(&ADCD1, NULL); 
   //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
 }
@@ -277,7 +285,11 @@ extern void bldcStart(BLDCMotor *pMotor)
 //*/
 
 //*
-	pMotor->pCommutationThread = chThdCreateStatic(
+  //if(!chBSemGetStateI(&bldc_bsem))
+  //{
+  //  chBSemReset(&bldc_bsem, true);
+  //}
+  pMotor->pCommutationThread = chThdCreateStatic(
 		waCommutationThread,
 		sizeof(waCommutationThread),
 		NORMALPRIO + 1,
@@ -306,10 +318,14 @@ extern void bldcStop(BLDCMotor *pMotor)
   {
 		return;
 	}
+  //chBSemSignal(&bldc_bsem);
+  //chSysLock();  
+  //chBSemReset(&bldc_bsem, true);
+  //chSysUnlock();  
+  pwmDisablePeriodicNotification(&PWMD1);
 	pwmDisableChannel(&PWMD1,PWM_U);
   pwmDisableChannel(&PWMD1,PWM_V);
   pwmDisableChannel(&PWMD1,PWM_W);
-  pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
   chThdTerminate(pMotor->pSpiThread);
   chThdTerminate(pMotor->pCommutationThread);

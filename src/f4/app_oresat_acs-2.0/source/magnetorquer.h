@@ -14,7 +14,8 @@
 #define MTQR_PWM_PERIOD MTQR_PWM_TIMER_FREQ/MTQR_PWM_FREQ
 
 #define PWM_CH_MTQR      			0             /// pwm channel
-#define MTQR_STARTING_DC			5000u         /// starting duty cycle
+#define MTQR_STARTING_DC			10000u         /// starting duty cycle
+//#define MTQR_STARTING_DC			5000u         /// starting duty cycle
 #define PH				 						GPIOC_MAG_PH  /// Phase (motor direction)
 #define ENABLE    						GPIOC_EN_MAG	/// Chip enable
 
