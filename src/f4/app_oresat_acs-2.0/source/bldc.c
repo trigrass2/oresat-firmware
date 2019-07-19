@@ -98,6 +98,7 @@ THD_FUNCTION(spiThread,arg)
 
 	spiReleaseBus(&SPID1);    // Release ownership of bus.
 	spiStop(&SPID1);          // Stop driver.
+  chThdExit((msg_t)0);
 }
 //*/
 
@@ -108,8 +109,11 @@ static float electricMotorAngle(float normalPosition)
 
 static int lookupPosition(float motorAngle, int phase)
 {
-  float x;
   static const float k_onethird = 1.0 / 3;
+
+//*
+  float x = 0;
+
   if(phase == 0)
   {
     x = motorAngle;
@@ -122,6 +126,19 @@ static int lookupPosition(float motorAngle, int phase)
   {
     x = motorAngle - k_onethird;
   }
+//*/
+/*
+  float x = motorAngle; // phase == 0
+
+  if (phase == 1)
+  {
+    x += k_onethird; 
+  }
+  else if (phase == 2)
+  {
+    x -= k_onethird;
+  }
+//*/
 
   return (x - floor(x)) * kLUTSize;
 }
@@ -165,6 +182,7 @@ binary_semaphore_t bldc_bsem;
 static void handleCommunicationTimeout(void)
 {
   chprintf(DEBUG_CHP, "timeout\n\r");
+  chThdSleepMilliseconds(200); 
 }
 
 THD_WORKING_AREA(waCommutationThread,THREAD_SIZE);
@@ -174,6 +192,8 @@ THD_FUNCTION(commutationThread,arg)
   chRegSetThreadName("commutationThread");
   
   //BLDCMotor *pMotor = (BLDCMotor *)arg;
+  
+  msg_t msg = 0;
   
   while(!chThdShouldTerminateX()) 
   {
@@ -188,10 +208,11 @@ THD_FUNCTION(commutationThread,arg)
      * If a communication timeout occurred then some special handling
      * is required.
      */
+
     chBSemWait(&bldc_bsem);
+
     /*
-    msg_t msg = chBSemWaitTimeout(&bldc_bsem, TIME_MS2I(500));
-    
+    msg = chBSemWaitTimeout(&bldc_bsem, TIME_MS2I(100));
     if(msg == MSG_TIMEOUT) 
     {
       handleCommunicationTimeout();
@@ -202,6 +223,7 @@ THD_FUNCTION(commutationThread,arg)
     commutateMotor(gpMotor->normalPosition);
     //chprintf(DEBUG_CHP, "%f\n\r",pMotor->normalPosition);
   }
+  chThdExit(msg);
 }
 
 static void pwmPeriodCallback(PWMDriver *pwmp) 
@@ -257,9 +279,11 @@ extern void bldcInit(BLDCMotor *pMotor)
   pMotor->calOffset = 0.25 - 0.145;  /// calibration offset
   pMotor->magnitude = 0.30;  /// calibration offset
   pMotor->isStarted = false;
-
-  chBSemObjectInit(&bldc_bsem, true);	
-	//adcStart(&ADCD1, NULL); 
+  pMotor->pBldc_bsem = &bldc_bsem; 
+  
+  chBSemObjectInit(&bldc_bsem, false);	
+	
+  //adcStart(&ADCD1, NULL); 
   //adcStartConversion(&ADCD1, &adcgrpcfg, pMotor->samples, ADC_GRP_BUF_DEPTH);
 }
 
@@ -285,10 +309,6 @@ extern void bldcStart(BLDCMotor *pMotor)
 //*/
 
 //*
-  //if(!chBSemGetStateI(&bldc_bsem))
-  //{
-  //  chBSemReset(&bldc_bsem, true);
-  //}
   pMotor->pCommutationThread = chThdCreateStatic(
 		waCommutationThread,
 		sizeof(waCommutationThread),
@@ -298,13 +318,14 @@ extern void bldcStart(BLDCMotor *pMotor)
 	);
 //*/
 
+//*
 	pwmStart(&PWMD1,&pwmRwConfig);
   pwmEnablePeriodicNotification(&PWMD1);
-	
 	pwmEnableChannel(&PWMD1,PWM_U,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,0));
   pwmEnableChannel(&PWMD1,PWM_V,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,0));
   pwmEnableChannel(&PWMD1,PWM_W,PWM_PERCENTAGE_TO_WIDTH(&PWMD1,0));
-  
+//*/
+
   pMotor->isStarted = TRUE;
 }
 
@@ -318,18 +339,22 @@ extern void bldcStop(BLDCMotor *pMotor)
   {
 		return;
 	}
-  //chBSemSignal(&bldc_bsem);
-  //chSysLock();  
-  //chBSemReset(&bldc_bsem, true);
-  //chSysUnlock();  
-  pwmDisablePeriodicNotification(&PWMD1);
-	pwmDisableChannel(&PWMD1,PWM_U);
+
+  pwmDisableChannel(&PWMD1,PWM_U);
   pwmDisableChannel(&PWMD1,PWM_V);
   pwmDisableChannel(&PWMD1,PWM_W);
+  pwmDisablePeriodicNotification(&PWMD1);
 	pwmStop(&PWMD1);
-  chThdTerminate(pMotor->pSpiThread);
+
+  chBSemReset(&bldc_bsem, false);
+
   chThdTerminate(pMotor->pCommutationThread);
-	pMotor->isStarted = FALSE;
+  chThdWait(pMotor->pCommutationThread);
+  
+  chThdTerminate(pMotor->pSpiThread);
+  chThdWait(pMotor->pSpiThread);
+ 
+ 	pMotor->isStarted = FALSE;
 }
 
 /**
@@ -355,8 +380,7 @@ extern void bldcExit(BLDCMotor *pMotor)
   {
 		bldcStop(pMotor);
 	}
+
   //adcStopConversion(&ADCD1);
   //adcStop(&ADCD1); 
-	chThdTerminate(pMotor->pSpiThread);
-	chThdWait(pMotor->pSpiThread);
 }

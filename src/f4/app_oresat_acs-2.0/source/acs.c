@@ -86,7 +86,7 @@ static ACS_VALID_STATE exit_rdy(ACS *acs)
 static ACS_VALID_STATE entry_rw(ACS *acs)
 {
   entry_helper(acs, ST_RW);
-	
+
   return ST_RW;
 }
 
@@ -98,7 +98,7 @@ static ACS_VALID_STATE entry_rw(ACS *acs)
 static ACS_VALID_STATE exit_rw(ACS *acs)
 {
   exit_helper(acs);
-	
+
   return ST_RW;
 }
 
@@ -168,25 +168,37 @@ static ACS_VALID_STATE exit_max_pwr(ACS *acs)
 /**
  *	Start reaction wheel
  */
-//*
 static EXIT_STATUS fn_rw_start(ACS *acs)
 {
 	(void)acs;
   chprintf(DEBUG_CHP, "start bldc\n\r");
+
+//* 
+  chSysLock(); 
+  acs->can_buf.status[CAN_SEMAPHORE_STATE] = chBSemGetStateI(acs->motor.pBldc_bsem)+1;
+  chSysUnlock(); 
+//*/
+
   bldcStart(&acs->motor); 
-	return STATUS_SUCCESS;
+  return STATUS_SUCCESS;
 }
 //*/
 
 /**
  *	Stop reaction wheel
  */
-//*
 static EXIT_STATUS fn_rw_stop(ACS *acs)
 {
 	(void)acs;
   chprintf(DEBUG_CHP, "stop bldc\n\r");
-  bldcStop(&acs->motor); 
+  bldcStop(&acs->motor);
+
+//* 
+  chSysLock(); 
+  acs->can_buf.status[CAN_SEMAPHORE_STATE] = chBSemGetStateI(acs->motor.pBldc_bsem)+1;
+  chSysUnlock(); 
+//*/
+
 	return STATUS_SUCCESS;
 }
 //*/
@@ -194,19 +206,16 @@ static EXIT_STATUS fn_rw_stop(ACS *acs)
 /**
  *	Set reaction wheel duty cycle
  */
-//*
 static EXIT_STATUS fn_rw_setdc(ACS *acs)
 {
 	(void)acs;
   
 	return STATUS_SUCCESS;
 }
-//*/
 
 /**
  *	Start magnetorquer 
  */
-//*
 static EXIT_STATUS fn_mtqr_start(ACS *acs)
 {
 	(void)acs;
@@ -214,12 +223,10 @@ static EXIT_STATUS fn_mtqr_start(ACS *acs)
   mtqrStart(&acs->mtqr); 
 	return STATUS_SUCCESS;
 }
-//*/
 
 /**
  *	Stop magnetorquer 
  */
-//*
 static EXIT_STATUS fn_mtqr_stop(ACS *acs)
 {
 	(void)acs;
@@ -227,19 +234,16 @@ static EXIT_STATUS fn_mtqr_stop(ACS *acs)
   mtqrStop(&acs->mtqr); 
 	return STATUS_SUCCESS;
 }
-//*/
 
 /**
  *	Set magnetorquer duty cycle
  */
-//*
 static EXIT_STATUS fn_mtqr_setdc(ACS *acs)
 {
 	(void)acs;
 
 	return STATUS_SUCCESS;
 }
-//*/
 
 /**
  *	Set magnetorquer duty cycle
@@ -267,7 +271,6 @@ static acs_function_rule func[] =
 /**
  *
  */
-//*
 static EXIT_STATUS callFunction(ACS *acs)
 {
 	int i;
@@ -293,7 +296,6 @@ static EXIT_STATUS callFunction(ACS *acs)
 //*/
 	return status;
 }
-//*/
 
 /**
  *	acs_transition_rule: defines valid state transitions
@@ -424,9 +426,7 @@ static EXIT_STATUS handleEvent(ACS *acs)
       changeStatus(acs, CAN_SM_STATUS, status);
 			break;
 		case CMD_CALL_FUNCTION:
-			//* TODO: Test me please
 			status = requestFunction(acs);
-			//*/
 			break;
 		default:
 			return STATUS_INVALID_CMD;

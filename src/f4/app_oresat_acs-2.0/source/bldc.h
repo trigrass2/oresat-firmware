@@ -47,7 +47,7 @@ typedef struct{
   int motorConst; /// motor characteristic constant
   int calOffset;  /// calibration offset
   float magnitude;  /// calibration offset
- 	
+ 	binary_semaphore_t *pBldc_bsem;
   bool isStarted;
 
   // ADC conversion storage array

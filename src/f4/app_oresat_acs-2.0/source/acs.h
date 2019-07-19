@@ -152,14 +152,14 @@ typedef enum
  */
 typedef enum
 {
-	CAN_SM_STATE = 0,		//
-	CAN_SM_PREV_STATE,	//
-	CAN_SM_STATUS,			//
-	CAN_FN_CALLED,			//
-	CAN_FN_STATUS,			//
-	CAN_STATUS_5,       // nbu
-	CAN_STATUS_6,       // nbu
-	CAN_STATUS_PING,    // CAN_STATUS_7 // for CAN dbg
+	CAN_SM_STATE = 0,     //
+	CAN_SM_PREV_STATE,    //
+	CAN_SM_STATUS,        //
+	CAN_FN_CALLED,        //
+	CAN_FN_STATUS,        //
+	CAN_SEMAPHORE_STATE,  // nbu
+	CAN_STATUS_6,         // nbu
+	CAN_STATUS_PING,      // CAN_STATUS_7 // for CAN dbg
   CAN_STATUS_END
 } CAN_STATUS_BUF;
 
