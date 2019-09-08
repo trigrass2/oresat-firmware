@@ -11,14 +11,18 @@ void cmd_dbgon(BaseSequentialStream *chp, int argc, char *argv[])
 {
   (void)argc;
   (void)argv;
-  chprintf(chp, "Dbg LEDs on");
+  chprintf(chp, "Dbg LEDs on\n\r");
+  palSetPad(GPIOB,1U);
+  palSetPad(GPIOB,2U);
 }
 
 void cmd_dbgoff(BaseSequentialStream *chp, int argc, char *argv[])
 {
   (void)argc;
   (void)argv;
-  chprintf(chp, "Dbg LEDs off");
+  chprintf(chp, "Dbg LEDs off\n\r");
+  palClearPad(GPIOB,1U);
+  palClearPad(GPIOB,2U);
 }
 
 static const ShellCommand commands[] = {

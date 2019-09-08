@@ -8,19 +8,16 @@ THD_FUNCTION(Thread1, arg)
   (void)arg;
 
   while (!chThdShouldTerminateX()) {
-  /*
-    palClearLine(LINE_DEBUG_2);
-    palClearLine(LINE_DEBUG_1);
-  //*/
+  //*
     palClearPad(GPIOB,1U);
     palClearPad(GPIOB,2U);
-    chThdSleepMilliseconds(500);
-  /*
-    palSetLine(LINE_DEBUG_2);
-    palSetLine(LINE_DEBUG_1);
+  //  chprintf((BaseSequentialStream *)&LPSD1, "Dbg LEDs off");
   //*/
+    chThdSleepMilliseconds(500);
+  //*
     palSetPad(GPIOB,1U);
     palSetPad(GPIOB,2U);
+  //*/
     chThdSleepMilliseconds(500);
   }
 
