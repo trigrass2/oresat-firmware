@@ -35,8 +35,20 @@ static oresat_config_t oresat_conf = {
  */
 static void app_init(void)
 {
+
+      /* Read operation.*/                                                      
+  //flash_error_t (*read)(void *instance, flash_offset_t offset,              
+                     //   size_t n, uint8_t *rp);                             
+  /* Program operation.*/                                                   
+ // flash_error_t (*program)(void *instance, flash_offset_t offset,           
+               //            size_t n, const uint8_t *pp);    
+
+    /* Starting EFL driver.*/
+    eflStart(&EFLD1, NULL);
+
+
     /* App initialization */
-    init_worker(&worker1, "Example blinky thread", blink_wa, sizeof(blink_wa), NORMALPRIO, blink, NULL, false);
+    init_worker(&worker1, "Example blinky thread", blink_wa, sizeof(blink_wa), NORMALPRIO, blink, NULL, true);
     reg_worker(&worker1);
 
     /* Start up debug output */
