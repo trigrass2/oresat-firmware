@@ -21,8 +21,10 @@
 /* Project header files */
 #include "oresat.h"
 #include "blink.h"
+#include "fw_update.h"
 
 static worker_t worker1;
+static worker_t fw_update_worker;
 
 static oresat_config_t oresat_conf = {
     &CAND1,
@@ -35,21 +37,16 @@ static oresat_config_t oresat_conf = {
  */
 static void app_init(void)
 {
-
-      /* Read operation.*/                                                      
-  //flash_error_t (*read)(void *instance, flash_offset_t offset,              
-                     //   size_t n, uint8_t *rp);                             
-  /* Program operation.*/                                                   
- // flash_error_t (*program)(void *instance, flash_offset_t offset,           
-               //            size_t n, const uint8_t *pp);    
-
     /* Starting EFL driver.*/
     eflStart(&EFLD1, NULL);
 
-
-    /* App initialization */
+    // start the blinky thread
     init_worker(&worker1, "Example blinky thread", blink_wa, sizeof(blink_wa), NORMALPRIO, blink, NULL, true);
     reg_worker(&worker1);
+
+    // start the FW update thread
+    init_worker(&fw_update_worker, "FW update thread", fw_update_wa, sizeof(fw_update_wa), NORMALPRIO, fw_update, NULL, true);
+    reg_worker(&fw_update_worker);
 
     /* Start up debug output */
     sdStart(&SD2, NULL);

@@ -35,7 +35,7 @@ endif
 
 # Enable this if you want to see the full log while compiling.
 ifeq ($(USE_VERBOSE_COMPILE),)
-  USE_VERBOSE_COMPILE = yes
+  USE_VERBOSE_COMPILE = no
 endif
 
 # If enabled, this option makes the build process faster by not compiling
@@ -55,13 +55,13 @@ endif
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
-  USE_PROCESS_STACKSIZE = 0x100
+  USE_PROCESS_STACKSIZE = 0x200
 endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
 # stack is used for processing interrupts and exceptions.
 ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
-  USE_EXCEPTIONS_STACKSIZE = 0x100
+  USE_EXCEPTIONS_STACKSIZE = 0x200
 endif
 
 # Enables the use of FPU (no, softfp, hard).
@@ -83,7 +83,7 @@ endif
 #
 
 # Define project name here
-PROJECT   = app_blinky
+PROJECT   = app_template
 
 # Target settings.
 MCU       = cortex-m0
@@ -104,6 +104,9 @@ DEPDIR   := $(APP_ROOT)/.dep
 
 #Board specific directories.
 BOARDDIR  = $(PROJ_ROOT)/boards/$(BOARD)
+
+# Project specific files.
+#include $(PROJ_SRC)/oresat.mk
 
 # Licensing files.
 include $(CHIBIOS)/os/license/license.mk
@@ -126,8 +129,7 @@ include $(CHIBIOS)/test/oslib/oslib_test.mk
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
 
 # Define linker script file here
-LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_1.ld
-#LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_2.ld
+LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -197,19 +199,6 @@ include $(TOOLCHAIN)/toolchain.mk
 ##############################################################################
 # Custom rules
 #
-
-sections: $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT).hex $(BUILDDIR)/$(PROJECT).bin
-
-	# save the vectors section, padded to 2K for 1 flash page (necessary?)
-	arm-none-eabi-objcopy --pad-to 0x8000800 -j .vectors -O binary $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_vectors.bin
-	arm-none-eabi-objcopy -j .vectors -O ihex $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_vectors.hex
-
-	# save the text, rodata, and data sections
-	arm-none-eabi-objcopy -j .text -j .rodata -j .data -O binary $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_prog.bin
-	arm-none-eabi-objcopy -j .text -j .rodata -j .data -O ihex $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_prog.hex
-
-	cat build/app_blinky_prog.hex build/app_blinky_vectors.hex > $(BUILDDIR)/concat.hex
-
 
 #
 # Custom rules

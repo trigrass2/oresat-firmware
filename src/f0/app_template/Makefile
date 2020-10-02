@@ -129,7 +129,7 @@ include $(CHIBIOS)/test/oslib/oslib_test.mk
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
 
 # Define linker script file here
-LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC.ld
+LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_1.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -199,6 +199,16 @@ include $(TOOLCHAIN)/toolchain.mk
 ##############################################################################
 # Custom rules
 #
+
+sections: $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT).hex $(BUILDDIR)/$(PROJECT).bin
+
+	# save the vectors section, padded to 2K for 1 flash page (necessary?)
+	arm-none-eabi-objcopy --pad-to 0x8000800 -j .vectors -O binary $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_vectors.bin
+	arm-none-eabi-objcopy -j .vectors -O ihex $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_vectors.hex
+
+	# save the text, rodata, and data sections
+	arm-none-eabi-objcopy -j .text -j .rodata -j .data -O binary $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_prog.bin
+	arm-none-eabi-objcopy -j .text -j .rodata -j .data -O ihex $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_prog.hex
 
 #
 # Custom rules
