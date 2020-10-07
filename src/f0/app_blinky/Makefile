@@ -126,8 +126,8 @@ include $(CHIBIOS)/test/oslib/oslib_test.mk
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
 
 # Define linker script file here
-LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_1.ld
-#LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_2.ld
+#LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_1.ld
+LDSCRIPT= $(PROJ_ROOT)/ld/STM32F091xC_FLASH_BL_2.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -209,7 +209,6 @@ sections: $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT).hex $(BUILDDIR)/$(PR
 	arm-none-eabi-objcopy -j .text -j .rodata -j .data -O ihex $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT)_prog.hex
 
 	cat build/app_blinky_prog.hex build/app_blinky_vectors.hex > $(BUILDDIR)/concat.hex
-
 
 #
 # Custom rules

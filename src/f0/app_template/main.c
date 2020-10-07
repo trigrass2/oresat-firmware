@@ -45,8 +45,8 @@ static void app_init(void)
     reg_worker(&worker1);
 
     // start the FW update thread
-    init_worker(&fw_update_worker, "FW update thread", fw_update_wa, sizeof(fw_update_wa), NORMALPRIO, fw_update, NULL, true);
-    reg_worker(&fw_update_worker);
+    //init_worker(&fw_update_worker, "FW update thread", fw_update_wa, sizeof(fw_update_wa), NORMALPRIO, fw_update, NULL, true);
+    //reg_worker(&fw_update_worker);
 
     /* Start up debug output */
     sdStart(&SD2, NULL);

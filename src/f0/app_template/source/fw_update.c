@@ -29,7 +29,7 @@ THD_FUNCTION(fw_update, arg)
         if (err != SUCCESS)
             chprintf(s, "doFWUpdate returned error code: %d\n", err);
         else
-            chprintf(s, "doFWUpdate suceeded!\n", err);
+            chprintf(s, "doFWUpdate suceeded!\n");
     }
 
     palClearLine(LINE_LED);
@@ -39,11 +39,13 @@ THD_FUNCTION(fw_update, arg)
 int doFWUpdate()
 {
     unsigned int flash1_base_offset = flash1_base - FLASH_BASE;
+    unsigned int flash0_base_offset = flash0_base - FLASH_BASE;
     unsigned int flash1_end_offset = flash1_end - FLASH_BASE;
     unsigned int image_base_offset = flash1_base_offset;
     uint8_t buf[BUF_SIZE], vectors[BUF_SIZE];
     int n;
     int recv_size;
+    int err;
     fw_header header;
     unsigned int crc_read;
 
@@ -57,7 +59,7 @@ int doFWUpdate()
     }
 
     chprintf(s, "FW Header: [PROG CRC:0x%x; VECT CRC:0x%x; PROG SIZE:%d; VECT SIZE:%d; FLAGS:0x%x; HEADER_CRC:0x%x]\n",
-             header.prog_crc, header.vectors_crc, header.prog_size, header.vectors_size, header.flags, header.header_crc);
+            header.prog_crc, header.vectors_crc, header.prog_size, header.vectors_size, header.flags, header.header_crc);
 
     // calculate the header crc by crcing the bytes of the header minus the header crc.
     // check it against expected
@@ -119,7 +121,13 @@ int doFWUpdate()
         flashWaitErase(efl);
 
         // write the page
-        flashProgram(efl, image_base_offset, sizeof(buf), (uint8_t *)buf);
+        err = flashProgram(efl, image_base_offset, sizeof(buf), (uint8_t *)buf);
+        if(err != FLASH_NO_ERROR)
+        {
+            chprintf(s, "flashProgram returned error code: %d\n", err);
+            return err;
+        }
+
 
         image_base_offset += BUF_SIZE;
     }
@@ -175,6 +183,50 @@ int doFWUpdate()
     {
         chprintf(s, "read CRC (%u) does not match expected (%u)\n", crc_read, header.prog_crc);
         return ERR_FW_CRC_INVAL;
+    }
+
+    chprintf(s, "doFWUpdate suceeded!\n");
+
+    // wait for uart buffer to clear
+    chThdSleepMilliseconds(100);
+
+    // disable interrupts
+    //chSysLock();
+    int sector = OFFSET_2_FLASH_SECTOR(0);
+    flashStartEraseSector(efl, sector);
+
+    // can't call flashWaitErase() because it calls sleep
+    for(volatile int i = 0; i < 1<<21; i++);
+    
+    err = flashProgram(efl, 0, VECTOR_SECTION_SIZE, (uint8_t *)vectors);
+    chprintf(s, "RAW ERR: 0x%08x\n", ((EFlashDriver*)&EFLD1)->flash->SR);
+    if(err != FLASH_NO_ERROR)
+    {
+        chprintf(s, "flashProgram vectors returned error code: %d\n", err);
+        return err;
+    }
+
+    // TODO check error
+    // read the bytes from flash
+    flashRead(efl, 0, VECTOR_SECTION_SIZE, (uint8_t *)buf);
+
+    // CRC the bytes we read
+    crc_read = crc32_single(buf, VECTOR_SECTION_SIZE);
+    chprintf(s, "vectors CRC: 0x%x\n", crc_read);
+
+    int delay = 1<<22;
+    //if(crc_read == header.vectors_crc)
+    //  delay = 1<<20;
+
+    // enable interrupts
+    //chSysUnlock();
+    //chprintf(s, "finished!\n");
+    //chprintf(s, "vectors CRC: 0x%x\n", crc_read);
+
+    while(1)
+    {
+        palToggleLine(LINE_LED);
+        for(volatile int i = 0; i < delay; i++);
     }
 
     return SUCCESS;

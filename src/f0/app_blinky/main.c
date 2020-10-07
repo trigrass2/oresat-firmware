@@ -40,11 +40,12 @@ int main(void)
 
     while (true)
     {
-        chprintf(&SD2, "T1: %d\n", t1);
-        chprintf(&SD2, "T2: %d\n", t2);
-        chprintf(&SD2, "STR: %s\n", str);
+//        chprintf(&SD2, "T1: %d\n", t1);
+//        chprintf(&SD2, "T2: %d\n", t2);
+  //      chprintf(&SD2, "STR: %s\n", str);
 
-        palClearLine(LINE_LED);
+        //palClearLine(LINE_LED);
+        palSetLine(LINE_LED);
         chThdSleepMilliseconds(100);
         palSetLine(LINE_LED);
         chThdSleepMilliseconds(100);

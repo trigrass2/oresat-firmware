@@ -25,6 +25,8 @@ thread_exit = 0
 def ser_read():
     ser = Serial("/dev/ttyACM0", 115200, timeout=1)
     f = open("crc_out", "w+")
+    f.write("==========================================\n")
+    f.write("==========================================\n")
     while 1:
         # read a line from the file
         line = ser.readline()
