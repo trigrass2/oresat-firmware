@@ -24,7 +24,6 @@ THD_FUNCTION(fw_update, arg)
 
     while (1)
     {
-        palToggleLine(LINE_LED);
         int err = doFWUpdate();
         if (err != SUCCESS)
             chprintf(s, "doFWUpdate returned error code: %d\n", err);
@@ -169,7 +168,7 @@ int doFWUpdate()
     }
 
     // disable CRC unit
-    crcDisable();
+    //crcDisable();
 
     // check read size
     if (n != header.prog_size)
@@ -187,47 +186,64 @@ int doFWUpdate()
 
     chprintf(s, "doFWUpdate suceeded!\n");
 
+    int delay = 1<<20;
+    int count = 4;
+
     // wait for uart buffer to clear
     chThdSleepMilliseconds(100);
 
     // disable interrupts
-    //chSysLock();
+    chSysLock();
     int sector = OFFSET_2_FLASH_SECTOR(0);
     flashStartEraseSector(efl, sector);
+    int wait = 0;
+    efl_lld_query_erase(efl, &wait);
 
     // can't call flashWaitErase() because it calls sleep
-    for(volatile int i = 0; i < 1<<21; i++);
-    
+    for(volatile int i = 0; i < 1<<23; i++);
+    //chSysUnlock();
     err = flashProgram(efl, 0, VECTOR_SECTION_SIZE, (uint8_t *)vectors);
-    chprintf(s, "RAW ERR: 0x%08x\n", ((EFlashDriver*)&EFLD1)->flash->SR);
+    //chprintf(s, "RAW ERR: 0x%08x\n", ((EFlashDriver*)&EFLD1)->flash->SR);
     if(err != FLASH_NO_ERROR)
     {
-        chprintf(s, "flashProgram vectors returned error code: %d\n", err);
-        return err;
+        count = err;
+        //chprintf(s, "flashProgram vectors returned error code: %d\n", err);
+        //chSysUnlock();
+        //return err;
     }
 
     // TODO check error
     // read the bytes from flash
-    flashRead(efl, 0, VECTOR_SECTION_SIZE, (uint8_t *)buf);
+    //flashRead(efl, 0, VECTOR_SECTION_SIZE, (uint8_t *)buf);
 
     // CRC the bytes we read
-    crc_read = crc32_single(buf, VECTOR_SECTION_SIZE);
-    chprintf(s, "vectors CRC: 0x%x\n", crc_read);
+    //crc_read = crc32_single(buf, VECTOR_SECTION_SIZE);
+    //chprintf(s, "vectors CRC: 0x%x\n", crc_read);
 
-    int delay = 1<<22;
-    //if(crc_read == header.vectors_crc)
+
+    //int delay = 1<<22;
+    /*
+       if(crc_read == header.vectors_crc)
+       chprintf(s, "CRC readback fail\n");
+       else
+       chprintf(s, "CRC readback success\n");
     //  delay = 1<<20;
+    */
 
     // enable interrupts
     //chSysUnlock();
     //chprintf(s, "finished!\n");
     //chprintf(s, "vectors CRC: 0x%x\n", crc_read);
 
-    while(1)
+    for(int i = 0; i < count; i++)
     {
-        palToggleLine(LINE_LED);
-        for(volatile int i = 0; i < delay; i++);
+        palSetLine(LINE_LED);
+        for(volatile int j = 0; j < delay; j++);
+        palClearLine(LINE_LED);
+        for(volatile int j = 0; j < delay; j++);
     }
+    chSysUnlock();
+    chSysHalt("fw_update");
 
     return SUCCESS;
 }
